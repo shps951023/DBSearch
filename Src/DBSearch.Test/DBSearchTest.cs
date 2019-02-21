@@ -11,15 +11,31 @@ namespace DBSearch.Test
         private static readonly string _connectionString = @"Data Source=(localdb)\MSSQLLocalDB;Integrated Security=SSPI;Initial Catalog=DBSearchTestDB;";
 
         [Fact]
+        public void DBSearchSearchActionTest()
+        {
+            using (var cnn = new SqlConnection(_connectionString))
+            {
+                var result = cnn.Search("Test", ComparisonOperator.Like, columnData =>
+                {
+                    Assert.Contains(columnData.TableName, new[] { "Table1", "Table2" });
+                });
+            }
+        }
+
+        [Fact]
         public void DBSearchSearchTest()
         {
             using (var cnn = new SqlConnection(_connectionString))
             {
                 {
-                    var result = cnn.Search("T", ComparisonOperator.Like, columnData =>
-                    {
-                        Console.WriteLine(columnData.TableName + " " + columnData.ColumnName + " " + columnData.ColumnValue + " " + columnData.MatchCount);
-                    });
+                    var result = cnn.Search("Test", ComparisonOperator.Like);
+                    var table1 = result.Where(w => w.TableName == "Table1" && w.ColumnName == "col_varchar"
+                        && (string)w.ColumnValue == "Test").First();
+                    Assert.Equal(2, table1.MatchCount);
+
+                    var table1LikeColumn = result.Where(w => w.TableName == "Table1" && w.ColumnName == "col_varchar_like" 
+                        && (string)w.ColumnValue == "Test2").First();
+                    Assert.Equal(2, table1LikeColumn.MatchCount);
                 }
             }
         }
