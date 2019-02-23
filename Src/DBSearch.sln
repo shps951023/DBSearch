@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test SQL Scripts", "Test SQ
 		..\Docs\SQLServerDDL.sql = ..\Docs\SQLServerDDL.sql
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleDemo", "..\Demo\ConsoleDemo\ConsoleDemo.csproj", "{9C292B8D-E7B5-4750-AFEE-2B8A167DA795}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{883F82C9-7938-4348-BE4E-F223735A3A83}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{883F82C9-7938-4348-BE4E-F223735A3A83}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{883F82C9-7938-4348-BE4E-F223735A3A83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C292B8D-E7B5-4750-AFEE-2B8A167DA795}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C292B8D-E7B5-4750-AFEE-2B8A167DA795}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C292B8D-E7B5-4750-AFEE-2B8A167DA795}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C292B8D-E7B5-4750-AFEE-2B8A167DA795}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
