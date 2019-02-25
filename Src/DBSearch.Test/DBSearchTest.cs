@@ -51,15 +51,6 @@ namespace DBSearch.Test
             }
         }
 
-        //[Fact]
-        //public void DBSearchSearchNullTest()
-        //{
-        //    using (var cnn = new SqlConnection(_connectionString))
-        //    {
-        //        var result = cnn.Search(null, ComparisonOperator.Like); //System.NullReferenceException
-        //    }
-        //}
-
         [Fact]
         public void DBSearchSearchEmptyTest()
         {

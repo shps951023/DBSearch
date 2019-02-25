@@ -100,34 +100,7 @@ namespace DBSearch
         private IEnumerable<IGrouping<string, TableSchmaModel>> GetTableSchmas()
         {
             var tableSchmasSQL = GetTableSchmasSQLBySearchTextType(_searchText);
-            return QueryTableSchma(_connection,tableSchmasSQL).GroupBy(g => g.TABLE_NAME);
-        }
-
-        private IEnumerable<TableSchmaModel> QueryTableSchma(IDbConnection connection, string tableSchmasSQL)
-        {
-            using (IDbCommand command = connection.CreateCommand())
-            {
-                command.CommandText = tableSchmasSQL;
-                command.CommandType = CommandType.Text;
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var tableSchma = new TableSchmaModel()
-                        {
-                            TABLE_CATALOG = reader.GetString(0),
-                            TABLE_NAME = reader.GetString(1),
-                            TABLE_SCHEMA = reader.GetString(2),
-                            TABLE_TYPE = reader.GetString(3),
-                            COLUMN_NAME = reader.GetString(4),
-                            ORDINAL_POSITION = reader.GetInt32(5),
-                            IS_NULLABLE = reader.GetString(6),
-                            DATA_TYPE = reader.GetString(7),
-                        };
-                        yield return tableSchma;
-                    }
-                }
-            }
+            return QueryTableSchma(_connection, tableSchmasSQL).GroupBy(g => g.TABLE_NAME);
         }
 
         private static readonly string SqlServerNumberType = " 'bigint','numeric','smallint','decimal','smallmoney','int','tinyint','money','float','real' ";
@@ -241,29 +214,32 @@ namespace DBSearch
 
             return sql.ToString();
         }
+        private IEnumerable<TableSchmaModel> QueryTableSchma(IDbConnection connection, string tableSchmasSQL)
+        {
+            var result = connection.SqlQuery<TableSchmaModel>(tableSchmasSQL, reader => new TableSchmaModel()
+            {
+                TABLE_CATALOG = reader.GetString(0),
+                TABLE_NAME = reader.GetString(1),
+                TABLE_SCHEMA = reader.GetString(2),
+                TABLE_TYPE = reader.GetString(3),
+                COLUMN_NAME = reader.GetString(4),
+                ORDINAL_POSITION = reader.GetInt32(5),
+                IS_NULLABLE = reader.GetString(6),
+                DATA_TYPE = reader.GetString(7),
+            });
+            return result;
+        }
         private IEnumerable<ColumnGroupResultViewModel> QueryColumnGroupResultViewModel(IDbConnection connection, string tableName, string column_name, string comparisonOperatorString, string searchTextValue)
         {
             var matchCountSql = $@"
                 select [{column_name}] [ColumnValue],count(1) [MatchCount] from [{tableName}] with (nolock) 
                 where [{column_name}] {comparisonOperatorString} {searchTextValue} group by [{column_name}]; ";
-
-            using (IDbCommand command = connection.CreateCommand())
+            var result = connection.SqlQuery<ColumnGroupResultViewModel>(matchCountSql, reader => new ColumnGroupResultViewModel()
             {
-                command.CommandText = matchCountSql;
-                command.CommandType = CommandType.Text;
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var column = new ColumnGroupResultViewModel()
-                        {
-                            ColumnValue = reader.GetValue(0),
-                            MatchCount = reader.GetInt32(1)
-                        };
-                        yield return column;
-                    }
-                }
-            }
+                ColumnValue = reader.GetValue(0),
+                MatchCount = reader.GetInt32(1)
+            });
+            return result;
         }
         private bool QueryTableExeistsSearchText(IDbConnection connection, IGrouping<string, TableSchmaModel> table, object tableName)
         {
@@ -271,27 +247,12 @@ namespace DBSearch
             {
                 string searchTextValue = ConvertSearchTextToDBValue(column.DATA_TYPE, this._searchText);
                 return $" [{column.COLUMN_NAME}] {_comparisonOperatorString} {searchTextValue} ";
-            })); ;
+            }));
 
             //Use with (nolock) to avoid locking tables
             var exeistsCheckSql = $"select top 1 1 from [{tableName}] with (nolock) where {checkSqlCondition} ; ";
-
-            using (IDbCommand command = connection.CreateCommand())
-            {
-                command.CommandText = exeistsCheckSql;
-                command.CommandType = CommandType.Text;
-                using (var reader = command.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        return reader.GetInt32(0) == 1;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-            }
+            var result = connection.SqlQueryOneRow<int>(exeistsCheckSql) == 1;
+            return result;
         }
     }
 }
