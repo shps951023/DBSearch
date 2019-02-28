@@ -13,6 +13,18 @@ namespace DBSearch
 
     internal class DBSearchFactory
     {
+        public static IDbSearch CreateInstance(IDbConnection cnn, object searchText, Action<MatchColumnModel> action,
+    ComparisonOperator comparisonOperator = ComparisonOperator.Equal, DBSearchSetting dBSearchSetting = null)
+        {
+            var connectionType = CheckDBConnectionTypeHelper.GetMatchDBType(cnn);
+            if (connectionType == DBConnectionType.Oracle)
+                return CreateInstance<OracleSearch>(cnn, searchText, action, comparisonOperator, dBSearchSetting);
+            else if (connectionType == DBConnectionType.SqlServer)
+                return CreateInstance<SQLServerSearch>(cnn, searchText, action, comparisonOperator, dBSearchSetting);
+            else
+                throw new Exception("Not Support DB Connection");
+        }
+
         public static T CreateInstance<T>(IDbConnection cnn, object searchText, Action<MatchColumnModel> action,
             ComparisonOperator comparisonOperator = ComparisonOperator.Equal, DBSearchSetting dBSearchSetting = null)
             where T : DBSearchBase, new()
@@ -97,8 +109,8 @@ namespace DBSearch
             var result = this._connection.SqlQuery<ColumnsSchmaModel>(tableSchmasSQL, reader => new ColumnsSchmaModel()
             {
                 TABLE_CATALOG = reader.GetString(0),
-                TABLE_NAME = reader.GetString(1),
-                TABLE_SCHEMA = reader.GetString(2),
+                TABLE_SCHEMA = reader.GetString(1),
+                TABLE_NAME = reader.GetString(2),
                 TABLE_TYPE = reader.GetString(3),
                 COLUMN_NAME = reader.GetString(4),
                 IS_NULLABLE = reader.GetString(5),
@@ -121,7 +133,8 @@ namespace DBSearch
         private bool IsSearchTextInTable(string tableName, IGrouping<string, ColumnsSchmaModel> columns)
         {
             string exeistsCheckSql = GetIsSearchTextInTableSQL(tableName, columns);
-            return this._connection.SqlQuerySingleOrDefault<int>(exeistsCheckSql) == 1;
+            var result = Convert.ToInt32(this._connection.SqlQuerySingleOrDefault(exeistsCheckSql));
+            return result == 1;
         }
         #endregion
     }

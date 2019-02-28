@@ -20,7 +20,7 @@ namespace DBSearch
             }
         }
 
-        public static T SqlQuerySingleOrDefault<T>(this IDbConnection conn, string query, object param = null)
+        public static object SqlQuerySingleOrDefault(this IDbConnection conn, string query, object param = null)
         {
             bool wasClosed = conn.State == ConnectionState.Closed;
             if (wasClosed) conn.Open();
@@ -30,9 +30,9 @@ namespace DBSearch
                 cmd.CommandText = query;
                 using (var r = cmd.ExecuteReader())
                     if (r.Read())
-                        return (T)r[0];
+                        return r[0];
                     else
-                        return default(T);
+                        return null;
             }
         }
 
