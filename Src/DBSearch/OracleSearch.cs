@@ -5,19 +5,19 @@ using System.Text;
 
 namespace DBSearch
 {
-    internal class SQLServerSearch : DBSearchBase , IDbSearch
+    internal class OracleSearch : DBSearchBase , IDbSearch
     {
         #region Props
-        private static readonly string SupportNumberType = " 'bigint','numeric','smallint','decimal','smallmoney','int','tinyint','money','float','real' ";
+        private static readonly string SupportNumberType = " 'LONG' , 'NUMBER' ";
         private static readonly Dictionary<Type, string> SupportDBTypes = new Dictionary<Type, string> {
                { typeof(int), SupportNumberType },
                { typeof(long), SupportNumberType },
                { typeof(double), SupportNumberType },
                { typeof(decimal), SupportNumberType },
                { typeof(float), SupportNumberType },
-               { typeof(string), " 'varchar' , 'nvarchar' " },
-               { typeof(DateTime), " 'datetime' " },
-               { typeof(bool), " 'bit' " }
+               { typeof(string), " 'NVARCHAR2' , 'VARCHAR2' " },
+               //{ typeof(DateTime), " 'datetime' " },
+               //{ typeof(bool), " 'bit' " }
           };
         #endregion
 
@@ -31,19 +31,22 @@ namespace DBSearch
                 throw new Exception($"DBSearch not support {type.Name} type");
 
             var sql = new StringBuilder($@"
-			select 
-				T2.TABLE_CATALOG
-                    ,T2.TABLE_SCHEMA
-                    ,T2.TABLE_NAME
-                    ,T2.TABLE_TYPE
-				,T1.COLUMN_NAME,T1.IS_NULLABLE,T1.DATA_TYPE
-			from INFORMATION_SCHEMA.COLUMNS T1 with (nolock)
-			left join INFORMATION_SCHEMA.TABLES T2 on T1.TABLE_NAME = T2.TABLE_NAME
-               where 1 =1 
+                select 
+                    ' ' as TABLE_CATALOG
+                    ,' ' as TABLE_SCHEMA
+                    ,TABLE_NAME
+                    ,case when T2.VIEW_NAME is null then 'BASE TABLE' else 'VIEW TABLE' end as TABLE_TYPE
+                    ,COLUMN_NAME as COLUMN_NAME
+                    ,NULLABLE as IS_NULLABLE
+                    ,DATA_TYPE
+                from user_tab_columns T1
+                left join user_views T2 on T1.TABLE_NAME = T2.VIEW_NAME
+                where 1=1
+    
 		  ");
 
             if (this._dbSearchSetting.ContainView == false)
-                sql.Append(" and Table_Type = 'BASE TABLE' ");
+                sql.Append(" and T2.VIEW_NAME is null ");
 
             sql.Append($" and T1.DATA_TYPE in ({condition}) ");
 
@@ -53,8 +56,8 @@ namespace DBSearch
         internal override string GetColumnMatchCountSQL(string tableName, string column_name, string searchTextValue)
         {
             var matchCountSql = $@"
-                select [{column_name}] [ColumnValue],count(1) [MatchCount] from [{tableName}] with (nolock) 
-                where [{column_name}] {this._comparisonOperatorString} {searchTextValue} group by [{column_name}]; ";
+                select ""{column_name}"" as ColumnValue,count(1) as MatchCount from ""{tableName}""
+                where ""{column_name}"" {this._comparisonOperatorString} {searchTextValue} group by ""{column_name}"" ";
             return matchCountSql;
         }
 
@@ -63,10 +66,10 @@ namespace DBSearch
             var checkConditionSql = string.Join("or", columns.Select(column =>
             {
                 string searchTextValue = ConvertSearchTextToDBValue(column.DATA_TYPE, this._searchText);
-                return $" [{column.COLUMN_NAME}] {_comparisonOperatorString} {searchTextValue} ";
+                return $@" ""{column.COLUMN_NAME}"" {_comparisonOperatorString} {searchTextValue} ";
             }));
 
-            var exeistsCheckSql = $"select top 1 1 from [{tableName}] with (nolock) where {checkConditionSql} ; "; /*Use with (nolock) to avoid locking tables*/
+            var exeistsCheckSql = $@"select 1 as value from ""{tableName}"" where 1=1 and rownum = 1 and ({checkConditionSql})  "; 
             return exeistsCheckSql;
         }
 
@@ -88,20 +91,20 @@ namespace DBSearch
                 if (this._dbSearchSetting.comparisonOperator == ComparisonOperator.Like)/*only string type need like check*/
                     searchText = $"%{searchText}%";
 
-                if (columnDataType == "nvarchar")
+                if (columnDataType == "NVARCHAR2")
                     value = $"N'{searchText}'";
-                else if (columnDataType == "varchar")
+                else if (columnDataType == "VARCHAR2")
                     value = $"'{searchText}'";
             }
             else if (searchText is int || searchText is float || searchText is decimal || searchText is double)
                 value = $"{searchText}";
-            else if (searchText is DateTime)
-                value = $"'{((DateTime)searchText).ToString("s")}'";
-            else if (searchText is bool)
-            {
-                var isTrue = (bool)searchText;
-                value = isTrue ? "1" : "0";
-            }
+            //else if (searchText is DateTime)
+            //    value = $"'{((DateTime)searchText).ToString("s")}'";
+            //else if (searchText is bool)
+            //{
+            //    var isTrue = (bool)searchText;
+            //    value = isTrue ? "1" : "0";
+            //}
 
             return value;
         }

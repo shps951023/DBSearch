@@ -8,7 +8,8 @@ namespace DBSearch.Test
 {
     public class DBSearchTestSetting
     {
-        internal static readonly string _connectionString = @"Data Source=(localdb)\MSSQLLocalDB;Integrated Security=SSPI;Initial Catalog=DBSearchTestDB;";
+        internal static readonly string _connectionString = 
+            @"Data Source=(localdb)\MSSQLLocalDB;Integrated Security=SSPI;Initial Catalog=DBSearchTestDB;";
     }
 
     public class DBSearchTest
@@ -19,7 +20,6 @@ namespace DBSearch.Test
         {
             using (var cnn = new SqlConnection(DBSearchTestSetting._connectionString))
             {
-                cnn.Open();
                 cnn.Search("Test", columnData =>
                 {
                     Assert.Contains(columnData.TableName, new[] { "Table1", "Table2" });
@@ -50,15 +50,6 @@ namespace DBSearch.Test
                 }
             }
         }
-
-        //[Fact]
-        //public void DBSearchSearchNullTest()
-        //{
-        //    using (var cnn = new SqlConnection(_connectionString))
-        //    {
-        //        var result = cnn.Search(null, ComparisonOperator.Like); //System.NullReferenceException
-        //    }
-        //}
 
         [Fact]
         public void DBSearchSearchEmptyTest()
@@ -98,7 +89,7 @@ namespace DBSearch.Test
 
     public class SQLServerSearchTest
     {
-        private SQLServerSearch dbSearch = new SQLServerSearch(null, null, null);
+        private SQLServerSearch dbSearch = DBSearchFactory.CreateInstance<SQLServerSearch>(null, null, null);
 
         public static IEnumerable<object[]> GetDeclareSearchTextSqlData =>
             new List<object[]>
