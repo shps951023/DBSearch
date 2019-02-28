@@ -9,6 +9,5 @@
         public int MatchCount { get; set; }
         public string ColumnName { get; set; }
         public object ColumnValue { get; set; } //for like where
-        public string ColumnQuerySQL { get; set; }
     }
 }

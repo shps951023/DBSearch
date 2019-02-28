@@ -9,7 +9,6 @@ namespace DBSearch
     {
         public static IEnumerable<MatchColumnModel> Search(this IDbConnection cnn, object searchText, Action<MatchColumnModel> action = null)
         {
-            
             return DBSearchFactory.CreateInstance<SQLServerSearch>(cnn, searchText, action).Search();
         }
 

@@ -10,7 +10,8 @@ namespace ConsoleDemo
 {
     class Program
     {
-        private static readonly string _connectionString = @"Data Source=(localdb)\MSSQLLocalDB;Integrated Security=SSPI;Initial Catalog=DBSearchTestDB;";
+        private static readonly string _connectionString = 
+            @"Data Source=(localdb)\MSSQLLocalDB;Integrated Security=SSPI;Initial Catalog=DBSearchTestDB;";
 
         static void Main(string[] args)
         {

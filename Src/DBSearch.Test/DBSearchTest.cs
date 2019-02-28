@@ -8,7 +8,8 @@ namespace DBSearch.Test
 {
     public class DBSearchTestSetting
     {
-        internal static readonly string _connectionString = @"Data Source=(localdb)\MSSQLLocalDB;Integrated Security=SSPI;Initial Catalog=DBSearchTestDB;";
+        internal static readonly string _connectionString = 
+            @"Data Source=(localdb)\MSSQLLocalDB;Integrated Security=SSPI;Initial Catalog=DBSearchTestDB;";
     }
 
     public class DBSearchTest
