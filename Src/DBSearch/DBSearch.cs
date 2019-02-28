@@ -9,12 +9,13 @@ namespace DBSearch
     {
         public static IEnumerable<MatchColumnModel> Search(this IDbConnection cnn, object searchText, Action<MatchColumnModel> action = null)
         {
-            return new SQLServerSearch(cnn, searchText, action).Search();
+            
+            return DBSearchFactory.CreateInstance<SQLServerSearch>(cnn, searchText, action).Search();
         }
 
         public static IEnumerable<MatchColumnModel> Search(this IDbConnection cnn, object searchText, ComparisonOperator comparisonOperator, Action<MatchColumnModel> action = null)
         {
-            return new SQLServerSearch(cnn, searchText, action, comparisonOperator).Search();
+            return DBSearchFactory.CreateInstance<SQLServerSearch>(cnn, searchText, action, comparisonOperator).Search();
         }
     }
 }

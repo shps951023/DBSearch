@@ -6,4 +6,9 @@
     {
         IEnumerable<MatchColumnModel> Search();
     }
+
+    abstract class DbSearchBase : IDbSearch
+    {
+        public abstract IEnumerable<MatchColumnModel> Search();
+    }
 }
