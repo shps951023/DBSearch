@@ -12,7 +12,7 @@ namespace DBSearch.Test
             @"Data Source=(localdb)\MSSQLLocalDB;Integrated Security=SSPI;Initial Catalog=DBSearchTestDB;";
     }
 
-    public class DBSearchTest
+    public class SQLServerSearchTest
     {
 
         [Fact]
@@ -85,10 +85,7 @@ namespace DBSearch.Test
             }
         }
 
-    }
 
-    public class SQLServerSearchTest
-    {
         private SQLServerSearch dbSearch = DBSearchFactory.CreateInstance<SQLServerSearch>(null, null, null);
 
         public static IEnumerable<object[]> GetDeclareSearchTextSqlData =>
@@ -104,7 +101,7 @@ namespace DBSearch.Test
                 new object[] { DateTime.Parse("2019/01/02 03:04:05"), "datetime", "'2019-01-02T03:04:05'" },
             };
         [Theory, MemberData(nameof(GetDeclareSearchTextSqlData))]
-        public void GetDeclareSearchTextSql(object searchText, string columnDataType, string excepted)
+        public void ConvertSearchTextToDBValue_Test(object searchText, string columnDataType, string excepted)
         {
             var result = dbSearch.ConvertSearchTextToDBValue(columnDataType, searchText);
             Assert.Equal(excepted, result);
