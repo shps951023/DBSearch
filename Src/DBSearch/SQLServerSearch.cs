@@ -26,8 +26,7 @@ namespace DBSearch
             var type = searchText.GetType();
 
             var condition = string.Empty;
-            SupportDBTypes.TryGetValue(type, out condition);/*when use dictionary[key] if key not contatins in dictionary , it'll throw System.Collections.Generic.KeyNotFoundException',so i use TryGetValue*/
-            if (condition == null)
+            if (!SupportDBTypes.TryGetValue(type, out condition))
                 throw new Exception($"DBSearch not support {type.Name} type");
 
             var sql = new StringBuilder($@"

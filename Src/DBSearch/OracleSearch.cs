@@ -26,8 +26,7 @@ namespace DBSearch
             var type = searchText.GetType();
 
             var condition = string.Empty;
-            SupportDBTypes.TryGetValue(type, out condition);/*when use dictionary[key] if key not contatins in dictionary , it'll throw System.Collections.Generic.KeyNotFoundException',so i use TryGetValue*/
-            if (condition == null)
+            if( ! SupportDBTypes.TryGetValue(type, out condition))
                 throw new Exception($"DBSearch not support {type.Name} type");
 
             var sql = new StringBuilder($@"
@@ -42,7 +41,6 @@ namespace DBSearch
                 from user_tab_columns T1
                 left join user_views T2 on T1.TABLE_NAME = T2.VIEW_NAME
                 where 1=1
-    
 		  ");
 
             if (this._dbSearchSetting.ContainView == false)
