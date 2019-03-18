@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using MiniSQLHelper;
 
 namespace DBSearch
 {
@@ -68,7 +69,7 @@ namespace DBSearch
         private IEnumerable<ColumnsSchmaModel> GetTableSchmas()
         {
             var tableSchmasSQL = GetTableColumnsSchmasSQL(_searchText);
-            var result = this._connection.SqlQuery<ColumnsSchmaModel>(tableSchmasSQL, reader => new ColumnsSchmaModel()
+            var result = this._connection.CreateCommand(tableSchmasSQL).Query(reader => new ColumnsSchmaModel()
             {
                 TABLE_CATALOG = reader.GetString(0),
                 TABLE_SCHEMA = reader.GetString(1),
@@ -84,18 +85,19 @@ namespace DBSearch
         private IEnumerable<MatchColumnCountModel> QueryColumnGroupResultViewModel(string tableName, string column_name, string searchTextValue)
         {
             var matchCountSql = this.GetColumnMatchCountSQL(tableName, column_name, searchTextValue);
-            var result = this._connection.SqlQuery<MatchColumnCountModel>(matchCountSql, reader => new MatchColumnCountModel()
-            {
-                ColumnValue = reader.GetValue(0),
-                MatchCount = reader.GetInt32(1)
-            });
+            var result = this._connection
+                .CreateCommand(matchCountSql).Query(reader => new MatchColumnCountModel()
+                {
+                    ColumnValue = reader.GetValue(0),
+                    MatchCount = reader.GetInt32(1)
+                });
             return result;
         }
 
         private bool IsSearchTextInTable(string tableName, IGrouping<string, ColumnsSchmaModel> columns)
         {
             string exeistsCheckSql = GetIsSearchTextInTableSQL(tableName, columns);
-            var result = Convert.ToInt32(this._connection.SqlQuerySingleOrDefault(exeistsCheckSql));
+            var result = this._connection.CreateCommand(exeistsCheckSql).ExecuteScalar<int>();
             return result == 1;
         }
         #endregion
