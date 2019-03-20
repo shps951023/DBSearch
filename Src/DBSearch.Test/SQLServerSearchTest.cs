@@ -20,6 +20,7 @@ namespace DBSearch.Test
         {
             using (var cnn = new SqlConnection(DBSearchTestSetting._connectionString))
             {
+                cnn.Open();
                 cnn.Search("Test", columnData =>
                 {
                     Assert.Contains(columnData.TableName, new[] { "Table1", "Table2" });

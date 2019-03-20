@@ -65,7 +65,7 @@ namespace DBSearch
             {
                 string searchTextValue = ConvertSearchTextToDBValue(column.DATA_TYPE, this._searchText);
                 return $@" ""{column.COLUMN_NAME}"" {_comparisonOperatorString} {searchTextValue} ";
-            }));
+            }).ToArray());
 
             var exeistsCheckSql = $@"select 1 as value from ""{tableName}"" where 1=1 and rownum = 1 and ({checkConditionSql})  "; 
             return exeistsCheckSql;

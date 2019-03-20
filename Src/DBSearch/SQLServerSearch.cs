@@ -62,8 +62,8 @@ namespace DBSearch
             var checkConditionSql = string.Join("or", columns.Select(column =>
             {
                 string searchTextValue = ConvertSearchTextToDBValue(column.DATA_TYPE, this._searchText);
-                return $" [{column.COLUMN_NAME}] {_comparisonOperatorString} {searchTextValue} ";
-            }));
+                return $" [{column.COLUMN_NAME}] {_comparisonOperatorString} @searchTextValue ";
+            }).ToArray());
 
             var exeistsCheckSql = $"select top 1 1 from [{tableName}] with (nolock) where {checkConditionSql} ; "; /*Use with (nolock) to avoid locking tables*/
             return exeistsCheckSql;

@@ -24,6 +24,7 @@ namespace DBSearch
             var dbsearch = new T
             {
                 _connection = cnn,
+                //_dbCommand = cnn.CreateCommand(),
                 _searchText = searchText,
                 _action = action
             };
