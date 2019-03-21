@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Data;
+using System.Data.Common;
 
 namespace DBSearch
 {
     internal class DBSearchFactory
     {
-        public static IDbSearch CreateInstance(IDbConnection cnn, object searchText, Action<MatchColumnModel> action,
+        public static IDbSearch CreateInstance(DbConnection cnn, object searchText, Action<MatchColumnModel> action,
             ComparisonOperator comparisonOperator = ComparisonOperator.Equal, DBSearchSetting dBSearchSetting = null)
         {
             var connectionType = CheckDBConnectionTypeHelper.GetMatchDBType(cnn);
-            if (connectionType == DBConnectionType.Oracle)
-                return CreateInstance<OracleSearch>(cnn, searchText, action, comparisonOperator, dBSearchSetting);
-            else if (connectionType == DBConnectionType.SqlServer)
-                return CreateInstance<SQLServerSearch>(cnn, searchText, action, comparisonOperator, dBSearchSetting);
+            if (connectionType == DBConnectionType.SqlServer)
+                return CreateInstance<DBSearchBase>(cnn, searchText, action, comparisonOperator, dBSearchSetting);
             else
                 throw new Exception("Not Support DB Connection");
         }
 
-        public static T CreateInstance<T>(IDbConnection cnn, object searchText, Action<MatchColumnModel> action,
+        public static T CreateInstance<T>(DbConnection cnn, object searchText, Action<MatchColumnModel> action,
             ComparisonOperator comparisonOperator = ComparisonOperator.Equal, DBSearchSetting dBSearchSetting = null)
             where T : DBSearchBase, new()
         {
