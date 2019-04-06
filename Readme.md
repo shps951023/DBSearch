@@ -40,32 +40,52 @@ using (var cnn = GetConnection())
 }
 ```
 
-#### 3.類型自動判斷(支持基本類型Int16 ,Int32 ,Double ,Single ,Decimal ,Boolean ,Byte ,Int64 ,Byte[] ,String ,DateTime ,Guid)
+#### 3.進階應用
+
+修改全資料庫指定值,舉例將全資料庫"Hello GitLab"值換成"Hello Github"
+```C#
+static void Replace(object replaceValue,object newValue)
+{
+    using (var scope = new System.Transactions.TransactionScope())
+    using (var connection = GetConnection())
+    {
+        connection.Search(replaceValue, (result) =>
+        {
+            var sql = $"Update {result.TABLE_NAME} set {result.COLUMN_NAME} = @newValue where {result.COLUMN_NAME} = @replaceValue";
+            var effect = connection.Execute(sql, new { replaceValue = result.COLUMN_VALUE, newValue }); //Using Dapper ORM
+        });
+        scope.Complete();
+    }
+}
+```
+
+#### 4.類型自動判斷(支持基本類型Int16 ,Int32 ,Double ,Single ,Decimal ,Boolean ,Byte ,Int64 ,Byte[] ,String ,DateTime ,Guid)
 
 以下為舉例示範跟測試資料
-![20190407021142-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021142-image.png)[線上SQL連結](https://dbfiddle.uk/?rdbms=sqlserver_2017&fiddle=824827c951dee214bf3c3debb3a6c591)
+![20190407021142-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021142-image.png)
+[線上SQL測試連結](https://dbfiddle.uk/?rdbms=sqlserver_2017&fiddle=824827c951dee214bf3c3debb3a6c591)
 
 字串
 ```C#
 var result = connection.Search("Test");
 ```
-![20190407020744-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407020744-image.png)
+![20190407023122-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407023122-image.png)
 
 日期
 ```C#
 var result = connection.Search(DateTime.Parse("2019/1/2 03:04:05"));
 ```
-![20190407021235-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021235-image.png)
+![20190407023046-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407023046-image.png)
 
 浮點數
 ```C#
 var result = connection.Search(1.2);
 ```
-![20190407021359-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021359-image.png)
+![20190407022958-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407022958-image.png)
 
 整數
 ```C#
 var result = connection.Search(123);
 ```
-![20190407021837-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021837-image.png)
+![20190407022915-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407022915-image.png)
 

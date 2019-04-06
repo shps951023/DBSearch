@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using Xunit;
 
-namespace DBSearch.Test
+namespace DbSearch.Test
 {
     public class SQLServerSearchTest
     {
@@ -36,9 +36,26 @@ namespace DBSearch.Test
             }
         }
 
-        /// <summary>
-        /// 示範取得其中一筆資料,增加判斷的詳細度
-        /// </summary>
+        [Fact]
+        public void DBSearchSearchActionByDapper()
+        {
+            Replace("Test","Test");
+        }
+
+        static void Replace(object replaceValue,object newValue)
+        {
+            using (var scope = new System.Transactions.TransactionScope())
+            using (var connection = GetConnection())
+            {
+                connection.Search(replaceValue, (result) =>
+                {
+                    var sql = $"Update {result.TABLE_NAME} set {result.COLUMN_NAME} = @newValue where {result.COLUMN_NAME} = @replaceValue";
+                    var effect = connection.Execute(sql, new { replaceValue = result.COLUMN_VALUE, newValue }); //Using Dapper ORM
+                });
+                scope.Complete();
+            }
+        }
+
         [Fact]
         public void DBSearchSearchAction()
         {
