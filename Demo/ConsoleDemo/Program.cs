@@ -15,21 +15,17 @@ namespace ConsoleDemo
 
         static void Main(string[] args)
         {
-            //using (var cnn = new SqlConnection(_connectionString))
-            //{
-            //    cnn.Open();
-            //    var result = cnn.Search("Test", columnData =>
-            //    {
-            //        var text = string.Format("{0},{1},{2},{3}", columnData.TableName, columnData.ColumnName, columnData.ColumnValue, columnData.MatchCount);
-            //        Console.WriteLine(text);
-            //    });
-            //}
-
-            using (var cnn = new OracleConnection(_connectionString))
+            using (var cnn = new SqlConnection(_connectionString))
             {
                 cnn.Open();
                 var result = cnn.Search("Test");
             }
+
+            //using (var cnn = new OracleConnection(_connectionString))
+            //{
+            //    cnn.Open();
+            //    var result = cnn.Search("Test");
+            //}
         }
     }
 }

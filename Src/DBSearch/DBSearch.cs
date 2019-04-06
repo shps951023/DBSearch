@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -7,10 +6,11 @@ using System.Linq;
 
 public static class DBSearch
 {
+    /// <summary>
+    /// Only String Type Support Like Search
+    /// </summary>
     public static IEnumerable<DbSearchResult> Search(this DbConnection connection, string searchText, bool likeSearch = false, Action<DbSearchResult> action = null)
     {
-        if (likeSearch) searchText = $"%{searchText}%";
-
         return SearchImpl(connection, searchText, action, likeSearch);
     }
 
@@ -36,11 +36,15 @@ public static class DBSearch
             case DBConnectionType.SQLite:
                 db = new SqliteDbSearch(connection, searchText, action, (likeSearch ? "like" : "="), "[", "]", "@"); break;
             case DBConnectionType.MySql:
-                db = new DbBaseSearch(connection, searchText, action, (likeSearch ? "like" : "="), "`", "`", "@"); break;
+                db = new MySqlDbSearch(connection, searchText, action, (likeSearch ? "like" : "="), "`", "`", "@"); break;
             case DBConnectionType.Oracle:
                 db = new OracleDbSearch(connection, searchText, action, (likeSearch ? "like" : "="), "\"", "\"", ":"); break;
+            case DBConnectionType.Firebird:
+                db = new FirebirdDbSearch(connection, searchText, action, (likeSearch ? "like" : "="), "\"", "\"", "?"); break;
+            case DBConnectionType.Postgres:
+                db = new NpgSqlDbSearch(connection, searchText, action, (likeSearch ? "like" : "="), "\"", "\"", "@"); break;
             default:
-                db = new DbBaseSearch(connection, searchText, action, (likeSearch ? "like" : "="), "[", "]", "@"); break;
+                db = new DbBaseSearch(connection, searchText, action, (likeSearch ? "like" : "="), "", "", "@"); break;
         }
         return db.Search();
     }
@@ -49,6 +53,36 @@ public static class DBSearch
 public interface IDbSearch
 {
     IEnumerable<DbSearchResult> Search();
+}
+
+internal class MySqlDbSearch : DbBaseSearch, IDbSearch
+{
+    public MySqlDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
+    : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
+
+    public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
+    {
+        var tableName = columnDatas.Key;
+        var checkConditionSql = string.Join("or", columnDatas.Select(
+             (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+        );
+        return $"select  1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} LIMIT 1 ";
+    }
+}
+
+internal class FirebirdDbSearch : DbBaseSearch, IDbSearch
+{
+    public FirebirdDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
+    : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
+
+    public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
+    {
+        var tableName = columnDatas.Key;
+        var checkConditionSql = string.Join("or", columnDatas.Select(
+             (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+        );
+        return $"select  FIRST 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql}  ";
+    }
 }
 
 internal class SqlServerDbSearch : DbBaseSearch, IDbSearch
@@ -78,6 +112,21 @@ internal class SqliteDbSearch : DbBaseSearch, IDbSearch
              (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
         );
         return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} LIMIT 1 ";
+    }
+}
+
+internal class NpgSqlDbSearch : DbBaseSearch, IDbSearch
+{
+    public NpgSqlDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
+    : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
+
+    public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
+    {
+        var tableName = columnDatas.Key;
+        var checkConditionSql = string.Join("or", columnDatas.Select(
+             (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+        );
+        return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} Limit 1 ";
     }
 }
 
