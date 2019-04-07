@@ -49,7 +49,7 @@ namespace DbSearch.Test
             {
                 connection.Search(replaceValue, (result) =>
                 {
-                    var sql = $"Update {result.TABLE_NAME} set {result.COLUMN_NAME} = @newValue where {result.COLUMN_NAME} = @replaceValue";
+                    var sql = $"Update {result.TableName} set {result.ColumnName} = @newValue where {result.ColumnName} = @replaceValue";
                     connection.Execute(sql, new { replaceValue = replaceValue, newValue }); //Using Dapper ORM
                 });
                 scope.Complete();
@@ -66,7 +66,7 @@ namespace DbSearch.Test
                 {
                     using (var command = cnn.CreateCommand())
                     {
-                        command.CommandText = $"Update {result.TABLE_NAME} set {result.COLUMN_NAME} = @newValue where {result.COLUMN_NAME} = @oldValue";
+                        command.CommandText = $"Update {result.TableName} set {result.ColumnName} = @newValue where {result.ColumnName} = @oldValue";
                         {
                             var param = command.CreateParameter();
                             param.ParameterName = "newValue";

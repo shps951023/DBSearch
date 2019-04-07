@@ -61,7 +61,7 @@ namespace DbSearch
         {
             var tableName = columnDatas.Key;
             var checkConditionSql = string.Join("or", columnDatas.Select(
-                 (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+                 (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
             );
             return $"select  1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} LIMIT 1 ";
         }
@@ -76,7 +76,7 @@ namespace DbSearch
         {
             var tableName = columnDatas.Key;
             var checkConditionSql = string.Join("or", columnDatas.Select(
-                 (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+                 (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
             );
             return $"select  FIRST 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql}  ";
         }
@@ -91,7 +91,7 @@ namespace DbSearch
         {
             var tableName = columnDatas.Key;
             var checkConditionSql = string.Join("or", columnDatas.Select(
-                 (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+                 (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
             );
             return $"select top 1 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
         }
@@ -144,12 +144,12 @@ namespace DbSearch
                 {
                     var data = new ConnectionColumn()
                     {
-                        TABLE_CATALOG = reader.GetString(0),
-                        TABLE_SCHEMA = reader.GetString(1),
-                        TABLE_NAME = reader.GetString(2),
-                        COLUMN_NAME = reader.GetString(3),
-                        DATA_TYPE = reader.GetString(4),
-                        IS_NULLABLE = reader.GetString(5),
+                        TableCatalog = reader.GetString(0),
+                        TableSchema = reader.GetString(1),
+                        TableName = reader.GetString(2),
+                        ColumnName = reader.GetString(3),
+                        DataType = reader.GetString(4),
+                        IsNullable = reader.GetString(5),
                     };
                     result.Add(data);
                 }
@@ -168,7 +168,7 @@ namespace DbSearch
         {
             var tableName = columnDatas.Key;
             var checkConditionSql = string.Join("or", columnDatas.Select(
-                 (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+                 (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
             );
             return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} LIMIT 1 ";
         }
@@ -183,7 +183,7 @@ namespace DbSearch
         {
             var tableName = columnDatas.Key;
             var checkConditionSql = string.Join("or", columnDatas.Select(
-                 (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+                 (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
             );
             return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} Limit 1 ";
         }
@@ -198,7 +198,7 @@ namespace DbSearch
         {
             var tableName = columnDatas.Key;
             var checkConditionSql = string.Join("or", columnDatas.Select(
-                 (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+                 (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
             );
             return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} rownum = 1 ";
         }
@@ -231,7 +231,7 @@ namespace DbSearch
         {
             var tableName = columnDatas.Key;
             var checkConditionSql = string.Join("or", columnDatas.Select(
-                 (column) => $" {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+                 (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
             );
             return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
         }
@@ -246,7 +246,7 @@ namespace DbSearch
                 Command.Parameters.Add(param);
 
                 var columns = GetConnectionColumns();
-                columns.GroupBy(g => g.TABLE_NAME).Where(p =>
+                columns.GroupBy(g => g.TableName).Where(p =>
                 {
                     Command.CommandText = GetCheckSQL(p);
                     var exist = (Command.ExecuteScalar() as int?) == 1;
@@ -256,13 +256,13 @@ namespace DbSearch
                 var results = new List<DbSearchResult>();
                 foreach (var column in columns)
                 {
-                    var tableName = column.TABLE_NAME;
+                    var tableName = column.TableName;
                     var matchCountSql = $@"
-                        select '{column.TABLE_SCHEMA}' {LeftSymbol}TABLE_SCHEMA{RightSymbol},'{column.TABLE_CATALOG}' {LeftSymbol}TABLE_CATALOG{RightSymbol},'{tableName}' {LeftSymbol}TABLE_NAME{RightSymbol},
-							'{column.COLUMN_NAME}' {LeftSymbol}COLUMN_NAME{RightSymbol},count(1) {LeftSymbol}MatchCount{RightSymbol},
-							'{column.DATA_TYPE}' {LeftSymbol}DATA_TYPE{RightSymbol},'{column.IS_NULLABLE}' {LeftSymbol}IS_NULLABLE{RightSymbol}
+                        select '{column.TableSchema}' {LeftSymbol}TABLE_SCHEMA{RightSymbol},'{column.TableCatalog}' {LeftSymbol}TABLE_CATALOG{RightSymbol},'{tableName}' {LeftSymbol}TABLE_NAME{RightSymbol},
+							'{column.ColumnName}' {LeftSymbol}COLUMN_NAME{RightSymbol},count(1) {LeftSymbol}MatchCount{RightSymbol},
+							'{column.DataType}' {LeftSymbol}DATA_TYPE{RightSymbol},'{column.IsNullable}' {LeftSymbol}IS_NULLABLE{RightSymbol}
 						from {LeftSymbol}{tableName}{RightSymbol} 
-                        where {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p  ";
+                        where {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p  ";
                     Command.CommandText = matchCountSql;
 
                     var datas = new List<DbSearchResult>();
@@ -273,13 +273,13 @@ namespace DbSearch
                         {
                             var data = new DbSearchResult()
                             {
-                                TABLE_SCHEMA = reader.GetString(0),
-                                TABLE_CATALOG = reader.GetString(1),
-                                TABLE_NAME = reader.GetString(2),
-                                COLUMN_NAME = reader.GetString(3),
+                                TableSchema = reader.GetString(0),
+                                TableCatalog = reader.GetString(1),
+                                TableName = reader.GetString(2),
+                                ColumnName = reader.GetString(3),
                                 MatchCount = (!reader.IsDBNull(4)) ? reader.GetInt32(4) : 0,
-                                DATA_TYPE = reader.GetString(5),
-                                IS_NULLABLE = reader.GetString(6),
+                                DataType = reader.GetString(5),
+                                IsNullable = reader.GetString(6),
                             };
                             if (data.MatchCount > 0)
                                 datas.Add(data);
@@ -303,14 +303,14 @@ namespace DbSearch
             var columns = Connection.GetSchema("Columns").Select().Select(s =>
                  new ConnectionColumn
                  {
-                     TABLE_CATALOG = s["TABLE_CATALOG"] as string,
-                     TABLE_SCHEMA = s["TABLE_SCHEMA"] as string,
-                     TABLE_NAME = s["TABLE_NAME"] as string,
-                     COLUMN_NAME = s["COLUMN_NAME"] as string,
-                     DATA_TYPE = s["DATA_TYPE"] as string,
-                     IS_NULLABLE = s["IS_NULLABLE"] as string,
-                 }).Join(table,t1 => new { t1.TABLE_CATALOG ,t1.TABLE_SCHEMA,t1.TABLE_NAME},
-                    t2 => new { t2.TABLE_CATALOG, t2.TABLE_SCHEMA, t2.TABLE_NAME },(t1,t2)=> t1
+                     TableCatalog = s["TABLE_CATALOG"] as string,
+                     TableSchema = s["TABLE_SCHEMA"] as string,
+                     TableName = s["TABLE_NAME"] as string,
+                     ColumnName = s["COLUMN_NAME"] as string,
+                     DataType = s["DATA_TYPE"] as string,
+                     IsNullable = s["IS_NULLABLE"] as string,
+                 }).Join(table,t1 => new { t1.TableCatalog ,t1.TableSchema,t1.TableName},
+                    t2 => new { t2.TableCatalog, t2.TableSchema, t2.TableName },(t1,t2)=> t1
                  ); /*only need table type*/
 
             //Logic: like string search, no need to search date and numeric type, also can avoid error caused by type inconsistency
@@ -330,10 +330,10 @@ namespace DbSearch
                  .Select(s =>
                     new ConnectionTable
                     {
-                        TABLE_CATALOG = s["TABLE_CATALOG"] as string,
-                        TABLE_SCHEMA = s["TABLE_SCHEMA"] as string,
-                        TABLE_NAME = s["TABLE_NAME"] as string,
-                        TABLE_TYPE = s["TABLE_TYPE"] as string
+                        TableCatalog = s["TABLE_CATALOG"] as string,
+                        TableSchema = s["TABLE_SCHEMA"] as string,
+                        TableName = s["TABLE_NAME"] as string,
+                        TableType = s["TABLE_TYPE"] as string
                     });
             return data;
         }
@@ -352,31 +352,31 @@ namespace DbSearch
 
     public class DbSearchResult
     {
-        public string TABLE_SCHEMA { get; set; }
-        public string TABLE_CATALOG { get; set; }
-        public string TABLE_NAME { get; set; }
-        public string COLUMN_NAME { get; set; }
+        public string TableSchema { get; set; }
+        public string TableCatalog { get; set; }
+        public string TableName { get; set; }
+        public string ColumnName { get; set; }
         public int MatchCount { get; set; }
-        public string DATA_TYPE { get; set; }
-        public string IS_NULLABLE { get; set; }
+        public string DataType { get; set; }
+        public string IsNullable { get; set; }
     }
 
     internal class ConnectionColumn
     {
-        public string TABLE_CATALOG { get; set; }
-        public string TABLE_SCHEMA { get; set; }
-        public string TABLE_NAME { get; set; }
-        public string COLUMN_NAME { get; set; }
-        public string DATA_TYPE { get; set; }
-        public string IS_NULLABLE { get; set; }
+        public string TableCatalog { get; set; }
+        public string TableSchema { get; set; }
+        public string TableName { get; set; }
+        public string ColumnName { get; set; }
+        public string DataType { get; set; }
+        public string IsNullable { get; set; }
     }
 
     internal class ConnectionTable
     {
-        public string TABLE_CATALOG { get; set; }
-        public string TABLE_SCHEMA { get; set; }
-        public string TABLE_NAME { get; set; }
-        public string TABLE_TYPE { get; set; }
+        public string TableCatalog { get; set; }
+        public string TableSchema { get; set; }
+        public string TableName { get; set; }
+        public string TableType { get; set; }
     }
 
     internal class ConnectionDataType
