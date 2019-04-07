@@ -8,17 +8,19 @@ using System.IO;
 using System.Linq;
 using Xunit;
 
-namespace DBSearch.Test
+namespace DbSearch.Test
 {
     public class SQLiteSearchTest
     {
         DbConnection GetSQLiteConnection()
         {
-            var _filePath = Path.Combine(Path.GetTempPath(), "MyDatabaseForDBSearchProject.sqlite");
+            var _filePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().GetHashCode() + "MyDatabaseForDBSearchProject.sqlite");
             var _connectionString = $"Data Source={_filePath};Version=3;";
             SQLiteConnection.CreateFile(_filePath);
-            var connection = new SQLiteConnection(_connectionString);
-            connection.ConnectionString = _connectionString;
+            var connection = new SQLiteConnection(_connectionString)
+            {
+                ConnectionString = _connectionString
+            };
             connection.Open();
             #region SQL
             var sql = @"

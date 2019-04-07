@@ -1,8 +1,8 @@
 ### Features
-- 簡單易用,只需要懂得Search方法就夠
+- 簡單易用 (只需懂`Search`方法)
 - 支持`net35;net40;net45;net451;net46;netstandard2.0;`
 - 不依賴任何第三方套件
-- 支持 SQL Server、Oracle、SQLite、MySQL、PGSQL、Firebird..其他資料庫理論上支持,假如不支持麻煩告知提ISSUE
+- 支持 SQL Server、Oracle、SQLite、MySQL、PGSQL、Firebird,其他資料庫理論上支持,假如不行麻煩告知提ISSUE
 
 
 ### Get Start
@@ -20,7 +20,7 @@ using (var connection = GetConnection())
 ```C#
 using (var cnn = GetConnection())
 {
-    var data = cnn.Search("%Test%",likeSearch:true);
+    var data = cnn.Search("%Test%");
 }
 ```
 
@@ -28,44 +28,59 @@ using (var cnn = GetConnection())
 ```C#
 using (var cnn = GetConnection())
 {
-    var data = cnn.Search("[A|B]%",likeSearch:true);
+    var data = cnn.Search("[A|B]%");
 }
 ```
 
-在sqlserver當中也可以使用正則模糊查詢,舉例搜尋A或B字母開頭的欄位值
+
+#### 3.進階應用
+
+修改全資料庫指定值,舉例將全資料庫"Hello GitLab"值換成"Hello Github"
 ```C#
-using (var cnn = GetConnection())
+Replace("Hello GitLab","Hello Github");
+
+static void Replace(object replaceValue,object newValue)
 {
-    var data = cnn.Search("[A|B]%",likeSearch:true);
+    using (var scope = new System.Transactions.TransactionScope())
+    using (var connection = GetConnection())
+    {
+        connection.Search(replaceValue, (result) =>
+        {
+            var sql = $"Update {result.TableName} set {result.ColumnName} = @newValue where {result.ColumnName} = @replaceValue";
+            connection.Execute(sql, new { replaceValue, newValue }); //Using Dapper ORM
+        });
+        scope.Complete();
+    }
 }
 ```
 
-#### 3.類型自動判斷(支持基本類型Int16 ,Int32 ,Double ,Single ,Decimal ,Boolean ,Byte ,Int64 ,Byte[] ,String ,DateTime ,Guid)
+#### 4.類型自動判斷(支持基本類型Int16 ,Int32 ,Double ,Single ,Decimal ,Boolean ,Byte ,Int64 ,Byte[] ,String ,DateTime ,Guid)
 
 以下為舉例示範跟測試資料
-![20190407021142-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021142-image.png)[線上SQL連結](https://dbfiddle.uk/?rdbms=sqlserver_2017&fiddle=824827c951dee214bf3c3debb3a6c591)
+![20190407021142-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021142-image.png)
+[線上SQL測試連結](https://dbfiddle.uk/?rdbms=sqlserver_2017&fiddle=824827c951dee214bf3c3debb3a6c591)
 
 字串
 ```C#
 var result = connection.Search("Test");
 ```
-![20190407020744-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407020744-image.png)
+![20190407023122-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407023122-image.png)
 
 日期
 ```C#
 var result = connection.Search(DateTime.Parse("2019/1/2 03:04:05"));
 ```
-![20190407021235-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021235-image.png)
+![20190407023046-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407023046-image.png)
 
 浮點數
 ```C#
 var result = connection.Search(1.2);
 ```
-![20190407021359-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021359-image.png)
+![20190407022958-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407022958-image.png)
 
 整數
 ```C#
 var result = connection.Search(123);
 ```
-![20190407021837-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407021837-image.png)
+![20190407022915-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407022915-image.png)
 

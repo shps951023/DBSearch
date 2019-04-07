@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using Xunit;
 
-namespace DBSearch.Test
+namespace DbSearch.Test
 {
     public class SQLServerSearchTest
     {
@@ -36,30 +36,47 @@ namespace DBSearch.Test
             }
         }
 
-        /// <summary>
-        /// 示範取得其中一筆資料,增加判斷的詳細度
-        /// </summary>
+        [Fact]
+        public void DBSearchSearchActionByDapper()
+        {
+            Replace("Test","Test");
+        }
+
+        static void Replace(object replaceValue,object newValue)
+        {
+            using (var scope = new System.Transactions.TransactionScope())
+            using (var connection = GetConnection())
+            {
+                connection.Search(replaceValue, (result) =>
+                {
+                    var sql = $"Update {result.TableName} set {result.ColumnName} = @newValue where {result.ColumnName} = @replaceValue";
+                    connection.Execute(sql, new { replaceValue, newValue }); //Using Dapper ORM
+                });
+                scope.Complete();
+            }
+        }
+
         [Fact]
         public void DBSearchSearchAction()
         {
             using (var tn = new System.Transactions.TransactionScope())
             using (var cnn = GetConnection())
             {
-                cnn.Search("%Tes%" , true , (result) =>
+                cnn.Search("Test", (result) =>
                 {
                     using (var command = cnn.CreateCommand())
                     {
-                        command.CommandText = $"Update {result.TABLE_NAME} set {result.COLUMN_NAME} = @newValue where {result.COLUMN_NAME} = @oldValue";
+                        command.CommandText = $"Update {result.TableName} set {result.ColumnName} = @newValue where {result.ColumnName} = @oldValue";
                         {
                             var param = command.CreateParameter();
                             param.ParameterName = "newValue";
-                            param.Value = result.COLUMN_VALUE;
+                            param.Value = "Test";
                             command.Parameters.Add(param);
                         }
                         {
                             var param = command.CreateParameter();
                             param.ParameterName = "oldValue";
-                            param.Value = result.COLUMN_VALUE;
+                            param.Value = "Test";
                             command.Parameters.Add(param);
                         }
 
