@@ -50,7 +50,7 @@ namespace DbSearch.Test
                 connection.Search(replaceValue, (result) =>
                 {
                     var sql = $"Update {result.TABLE_NAME} set {result.COLUMN_NAME} = @newValue where {result.COLUMN_NAME} = @replaceValue";
-                    var effect = connection.Execute(sql, new { replaceValue = result.COLUMN_VALUE, newValue }); //Using Dapper ORM
+                    connection.Execute(sql, new { replaceValue = result.COLUMN_VALUE, newValue }); //Using Dapper ORM
                 });
                 scope.Complete();
             }

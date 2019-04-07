@@ -13,12 +13,12 @@ namespace DbSearch
         /// </summary>
         public static IEnumerable<DbSearchResult> Search(this DbConnection connection, string searchText, bool likeSearch = false, Action<DbSearchResult> action = null)
         {
-            return SearchImpl(connection, searchText, action, likeSearch);
+            return SearchImpl(connection, searchText, action, true);
         }
 
         public static IEnumerable<DbSearchResult> Search(this DbConnection connection, string searchText, Action<DbSearchResult> action)
         {
-            return SearchImpl(connection, searchText, action, false);
+            return SearchImpl(connection, searchText, action, true);
         }
 
         public static IEnumerable<DbSearchResult> Search(this DbConnection connection, object searchText, Action<DbSearchResult> action = null)
@@ -100,6 +100,68 @@ namespace DbSearch
             );
             return $"select top 1 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
         }
+
+        public readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
+        {
+            {typeof(System.Int16)," 'smallint' "},
+            {typeof(System.Int32)," 'int' "},
+            {typeof(System.Single)," 'real' "},
+            {typeof(System.Double)," 'float' "},
+            {typeof(System.Decimal)," 'money','smallmoney','decimal','numeric' "},
+            {typeof(System.Boolean)," 'bit' "},
+            {typeof(System.SByte)," 'tinyint' "},
+            {typeof(System.Int64)," 'bigint' "},
+            {typeof(System.Byte[])," 'timestamp','binary','image','varbinary' "},
+            {typeof(System.String)," 'text','ntext','xml','varchar','char','nchar','nvarchar' "},
+            {typeof(System.DateTime)," 'datetime','smalldatetime','date','datetime2' "},
+            {typeof(System.Object)," 'sql_variant' "},
+            {typeof(System.Guid)," 'uniqueidentifier' "},
+            {typeof(System.TimeSpan)," 'time' "},
+            {typeof(System.DateTimeOffset)," 'datetimeoffset' "},
+        };
+
+        public override IEnumerable<ConnectionColumn> GetConnectionColumns()
+        {
+            var type = SearchText.GetType();
+
+            if (!_MapperDictionary.TryGetValue(type, out string conditionSql))
+                throw new NotSupportedException($"{type.FullName} not support");
+
+            var sql = $@"
+                    select 
+	                    T2.TABLE_CATALOG 
+                        ,T2.TABLE_SCHEMA 
+                        ,T2.TABLE_NAME 
+                        ,T1.COLUMN_NAME
+                        ,T1.DATA_TYPE
+	                   ,T1.IS_NULLABLE
+                    from INFORMATION_SCHEMA.COLUMNS T1 with (nolock)
+                    left join INFORMATION_SCHEMA.TABLES T2 on T1.TABLE_NAME = T2.TABLE_NAME
+                    where 1 =1  and Table_Type = 'BASE TABLE' 
+	                     and T1.DATA_TYPE in ({conditionSql}) 
+                ";
+            this.Command.CommandText = sql;
+
+            var result = new List<ConnectionColumn>();
+            using (var reader = Command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    var data = new ConnectionColumn()
+                    {
+                        TABLE_CATALOG = reader.GetString(0),
+                        TABLE_SCHEMA = reader.GetString(1),
+                        TABLE_NAME = reader.GetString(2),
+                        COLUMN_NAME = reader.GetString(3),
+                        DATA_TYPE = reader.GetString(4),
+                        IS_NULLABLE = reader.GetString(5),
+                    };
+                    result.Add(data);
+                }
+            }
+
+            return result;
+        }
     }
 
     internal class SqliteDbSearch : DbBaseSearch, IDbSearch
@@ -150,6 +212,8 @@ namespace DbSearch
     internal class DbBaseSearch : IDbSearch
     {
         public DbConnection Connection { get; set; }
+        public DbCommand Command { get; set; }
+
         public object SearchText { get; set; }
         public string ComparisonOperator { get; set; }
         public string LeftSymbol { get; set; }
@@ -159,13 +223,13 @@ namespace DbSearch
 
         public DbBaseSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
         {
-            this.Connection = connection;
-            this.SearchText = searchText;
-            this.Action = action;
-            this.ComparisonOperator = comparisonOperator;
-            this.LeftSymbol = leftSymbol;
-            this.RightSymbol = rightSymbol;
-            this.ParameterSymbol = parameterSymbol;
+            Connection = connection;
+            SearchText = searchText;
+            Action = action;
+            ComparisonOperator = comparisonOperator;
+            LeftSymbol = leftSymbol;
+            RightSymbol = rightSymbol;
+            ParameterSymbol = parameterSymbol;
         }
 
         public virtual string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
@@ -179,18 +243,18 @@ namespace DbSearch
 
         public IEnumerable<DbSearchResult> Search()
         {
-            using (var command = Connection.CreateCommand())
+            using (Command = Connection.CreateCommand())
             {
-                var param = command.CreateParameter();
+                var param = Command.CreateParameter();
                 param.ParameterName = $"{ParameterSymbol}p";
                 param.Value = SearchText;
-                command.Parameters.Add(param);
+                Command.Parameters.Add(param);
 
                 var columns = GetConnectionColumns();
                 columns.GroupBy(g => g.TABLE_NAME).Where(p =>
                 {
-                    command.CommandText = GetCheckSQL(p);
-                    var exist = (command.ExecuteScalar() as int?) == 1;
+                    Command.CommandText = GetCheckSQL(p);
+                    var exist = (Command.ExecuteScalar() as int?) == 1;
                     return exist;
                 });
 
@@ -205,10 +269,11 @@ namespace DbSearch
                                     ,{column.COLUMN_NAME} {LeftSymbol}COLUMN_NAME{RightSymbol}
 						from {LeftSymbol}{tableName}{RightSymbol} 
                         where {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p group by {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} ";
-                    command.CommandText = matchCountSql;
+                    Command.CommandText = matchCountSql;
 
                     var datas = new List<DbSearchResult>();
-                    using (var reader = command.ExecuteReader())
+
+                    using (var reader = Command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -248,7 +313,6 @@ namespace DbSearch
                      COLUMN_NAME = s["COLUMN_NAME"] as string,
                      DATA_TYPE = s["DATA_TYPE"] as string,
                      IS_NULLABLE = s["IS_NULLABLE"] as string,
-                     CHARACTER_MAXIMUM_LENGTH = s["CHARACTER_MAXIMUM_LENGTH"] as string
                  });
 
             //邏輯: 像是字串搜尋,不需要搜尋日期跟數字類型,也可以避免類型不一致導致error
@@ -305,7 +369,6 @@ namespace DbSearch
         public string COLUMN_NAME { get; set; }
         public string DATA_TYPE { get; set; }
         public string IS_NULLABLE { get; set; }
-        public string CHARACTER_MAXIMUM_LENGTH { get; set; }
     }
 
     internal class ConnectionTable
@@ -328,7 +391,7 @@ namespace DbSearch
     #region Extensions
     internal static class CheckDBConnectionTypeHelper
     {
-        private static readonly DBConnectionType DefaultAdapter = DBConnectionType.None;
+        private static readonly DBConnectionType DefaultAdapter = DBConnectionType.Unknown;
         private static readonly Dictionary<string, DBConnectionType> AdapterDictionary
               = new Dictionary<string, DBConnectionType>
               {
@@ -349,7 +412,7 @@ namespace DbSearch
 
     internal enum DBConnectionType
     {
-        SqlServer, SqlCeServer, Postgres, SQLite, MySql, Oracle, Firebird, None
+        SqlServer, SqlCeServer, Postgres, SQLite, MySql, Oracle, Firebird, Unknown
     }
     #endregion
 }

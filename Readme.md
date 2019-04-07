@@ -1,8 +1,8 @@
 ### Features
-- 簡單易用,只需要懂得Search方法就夠
+- 簡單易用 (只需懂`Search`方法)
 - 支持`net35;net40;net45;net451;net46;netstandard2.0;`
 - 不依賴任何第三方套件
-- 支持 SQL Server、Oracle、SQLite、MySQL、PGSQL、Firebird..其他資料庫理論上支持,假如不支持麻煩告知提ISSUE
+- 支持 SQL Server、Oracle、SQLite、MySQL、PGSQL、Firebird,其他資料庫理論上支持,假如不行麻煩告知提ISSUE
 
 
 ### Get Start
@@ -32,18 +32,13 @@ using (var cnn = GetConnection())
 }
 ```
 
-在sqlserver當中也可以使用正則模糊查詢,舉例搜尋A或B字母開頭的欄位值
-```C#
-using (var cnn = GetConnection())
-{
-    var data = cnn.Search("[A|B]%",likeSearch:true);
-}
-```
 
 #### 3.進階應用
 
 修改全資料庫指定值,舉例將全資料庫"Hello GitLab"值換成"Hello Github"
 ```C#
+Replace("Hello GitLab","Hello Github");
+
 static void Replace(object replaceValue,object newValue)
 {
     using (var scope = new System.Transactions.TransactionScope())
@@ -52,7 +47,7 @@ static void Replace(object replaceValue,object newValue)
         connection.Search(replaceValue, (result) =>
         {
             var sql = $"Update {result.TABLE_NAME} set {result.COLUMN_NAME} = @newValue where {result.COLUMN_NAME} = @replaceValue";
-            var effect = connection.Execute(sql, new { replaceValue = result.COLUMN_VALUE, newValue }); //Using Dapper ORM
+            connection.Execute(sql, new { replaceValue = result.COLUMN_VALUE, newValue }); //Using Dapper ORM
         });
         scope.Complete();
     }
