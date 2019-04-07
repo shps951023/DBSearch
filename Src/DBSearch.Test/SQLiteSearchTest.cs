@@ -14,7 +14,7 @@ namespace DbSearch.Test
     {
         DbConnection GetSQLiteConnection()
         {
-            var _filePath = Path.Combine(Path.GetTempPath(), "MyDatabaseForDBSearchProject.sqlite");
+            var _filePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().GetHashCode() + "MyDatabaseForDBSearchProject.sqlite");
             var _connectionString = $"Data Source={_filePath};Version=3;";
             SQLiteConnection.CreateFile(_filePath);
             var connection = new SQLiteConnection(_connectionString)

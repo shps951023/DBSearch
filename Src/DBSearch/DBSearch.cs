@@ -6,17 +6,10 @@ using System.Linq;
 
 namespace DbSearch
 {
+    #region Open Api
     public static class DbSearch
     {
-        /// <summary>
-        /// Only String Type Support Like Search
-        /// </summary>
-        public static IEnumerable<DbSearchResult> Search(this DbConnection connection, string searchText, bool likeSearch = false, Action<DbSearchResult> action = null)
-        {
-            return SearchImpl(connection, searchText, action, true);
-        }
-
-        public static IEnumerable<DbSearchResult> Search(this DbConnection connection, string searchText, Action<DbSearchResult> action)
+        public static IEnumerable<DbSearchResult> Search(this DbConnection connection, string searchText, Action<DbSearchResult> action = null)
         {
             return SearchImpl(connection, searchText, action, true);
         }
@@ -51,7 +44,9 @@ namespace DbSearch
             return db.Search();
         }
     }
+    #endregion
 
+    #region interface and implementation
     internal interface IDbSearch
     {
         IEnumerable<DbSearchResult> Search();
@@ -101,7 +96,7 @@ namespace DbSearch
             return $"select top 1 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
         }
 
-        public readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
+        private readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
         {
             {typeof(System.Int16)," 'smallint' "},
             {typeof(System.Int32)," 'int' "},
@@ -140,7 +135,7 @@ namespace DbSearch
                     where 1 =1  and Table_Type = 'BASE TABLE' 
 	                     and T1.DATA_TYPE in ({conditionSql}) 
                 ";
-            this.Command.CommandText = sql;
+            Command.CommandText = sql;
 
             var result = new List<ConnectionColumn>();
             using (var reader = Command.ExecuteReader())
@@ -241,7 +236,7 @@ namespace DbSearch
             return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
         }
 
-        public IEnumerable<DbSearchResult> Search()
+        public virtual IEnumerable<DbSearchResult> Search()
         {
             using (Command = Connection.CreateCommand())
             {
@@ -266,16 +261,15 @@ namespace DbSearch
                         select '{column.TABLE_SCHEMA}' {LeftSymbol}TABLE_SCHEMA{RightSymbol},'{column.TABLE_CATALOG}' {LeftSymbol}TABLE_CATALOG{RightSymbol},'{tableName}' {LeftSymbol}TABLE_NAME{RightSymbol},
 							'{column.COLUMN_NAME}' {LeftSymbol}COLUMN_NAME{RightSymbol},count(1) {LeftSymbol}MatchCount{RightSymbol},
 							'{column.DATA_TYPE}' {LeftSymbol}DATA_TYPE{RightSymbol},'{column.IS_NULLABLE}' {LeftSymbol}IS_NULLABLE{RightSymbol}
-                                    ,{column.COLUMN_NAME} {LeftSymbol}COLUMN_NAME{RightSymbol}
 						from {LeftSymbol}{tableName}{RightSymbol} 
-                        where {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p group by {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} ";
+                        where {LeftSymbol}{column.COLUMN_NAME}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p  ";
                     Command.CommandText = matchCountSql;
 
                     var datas = new List<DbSearchResult>();
 
-                    using (var reader = Command.ExecuteReader())
+                    using (var reader = Command.ExecuteReader(CommandBehavior.SequentialAccess | CommandBehavior.SingleResult | CommandBehavior.SingleRow))
                     {
-                        while (reader.Read())
+                        if ((reader.Read() && reader.FieldCount != 0))
                         {
                             var data = new DbSearchResult()
                             {
@@ -286,10 +280,12 @@ namespace DbSearch
                                 MatchCount = (!reader.IsDBNull(4)) ? reader.GetInt32(4) : 0,
                                 DATA_TYPE = reader.GetString(5),
                                 IS_NULLABLE = reader.GetString(6),
-                                COLUMN_VALUE = reader.GetValue(7),
                             };
-                            datas.Add(data);
+                            if (data.MatchCount > 0)
+                                datas.Add(data);
                         }
+                        while (reader.Read()) { }
+                        while (reader.NextResult()) { }
                     }
 
                     foreach (var item in datas)
@@ -303,8 +299,8 @@ namespace DbSearch
 
         public virtual IEnumerable<ConnectionColumn> GetConnectionColumns()
         {
-            var table = Connection.GetSchema("Columns");
-            var columns = table.Select().Select(s =>
+            var table = GetConnectionTable();
+            var columns = Connection.GetSchema("Columns").Select().Select(s =>
                  new ConnectionColumn
                  {
                      TABLE_CATALOG = s["TABLE_CATALOG"] as string,
@@ -313,9 +309,11 @@ namespace DbSearch
                      COLUMN_NAME = s["COLUMN_NAME"] as string,
                      DATA_TYPE = s["DATA_TYPE"] as string,
                      IS_NULLABLE = s["IS_NULLABLE"] as string,
-                 });
+                 }).Join(table,t1 => new { t1.TABLE_CATALOG ,t1.TABLE_SCHEMA,t1.TABLE_NAME},
+                    t2 => new { t2.TABLE_CATALOG, t2.TABLE_SCHEMA, t2.TABLE_NAME },(t1,t2)=> t1
+                 ); /*only need table type*/
 
-            //邏輯: 像是字串搜尋,不需要搜尋日期跟數字類型,也可以避免類型不一致導致error
+            //Logic: like string search, no need to search date and numeric type, also can avoid error caused by type inconsistency
             var searchType = SearchText.GetType();
             var types = GetConnectionTypeSchema();
             var usingType = types.Where(w => w.DataType == searchType.FullName).Select(s => s.TypeName);
@@ -327,14 +325,16 @@ namespace DbSearch
         public virtual IEnumerable<ConnectionTable> GetConnectionTable()
         {
             var table = Connection.GetSchema("Tables");
-            var data = table.Select().Select(s =>
-                           new ConnectionTable
-                           {
-                               TABLE_CATALOG = s["TABLE_CATALOG"] as string,
-                               TABLE_SCHEMA = s["TABLE_SCHEMA"] as string,
-                               TABLE_NAME = s["TABLE_NAME"] as string,
-                               TABLE_TYPE = s["TABLE_TYPE"] as string
-                           });
+            var data = table.Select()
+                 .Where(w => (w["TABLE_TYPE"] as string).ToLower().IndexOf("table") != -1) /*The purpose is to filter out the View*/
+                 .Select(s =>
+                    new ConnectionTable
+                    {
+                        TABLE_CATALOG = s["TABLE_CATALOG"] as string,
+                        TABLE_SCHEMA = s["TABLE_SCHEMA"] as string,
+                        TABLE_NAME = s["TABLE_NAME"] as string,
+                        TABLE_TYPE = s["TABLE_TYPE"] as string
+                    });
             return data;
         }
 
@@ -346,6 +346,7 @@ namespace DbSearch
             return data;
         }
     }
+    #endregion
 
     #region Models
 
@@ -355,7 +356,6 @@ namespace DbSearch
         public string TABLE_CATALOG { get; set; }
         public string TABLE_NAME { get; set; }
         public string COLUMN_NAME { get; set; }
-        public object COLUMN_VALUE { get; set; }
         public int MatchCount { get; set; }
         public string DATA_TYPE { get; set; }
         public string IS_NULLABLE { get; set; }

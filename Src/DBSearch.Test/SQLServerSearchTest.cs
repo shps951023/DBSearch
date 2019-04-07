@@ -50,7 +50,7 @@ namespace DbSearch.Test
                 connection.Search(replaceValue, (result) =>
                 {
                     var sql = $"Update {result.TABLE_NAME} set {result.COLUMN_NAME} = @newValue where {result.COLUMN_NAME} = @replaceValue";
-                    connection.Execute(sql, new { replaceValue = result.COLUMN_VALUE, newValue }); //Using Dapper ORM
+                    connection.Execute(sql, new { replaceValue = replaceValue, newValue }); //Using Dapper ORM
                 });
                 scope.Complete();
             }
@@ -62,7 +62,7 @@ namespace DbSearch.Test
             using (var tn = new System.Transactions.TransactionScope())
             using (var cnn = GetConnection())
             {
-                cnn.Search("%Tes%" , true , (result) =>
+                cnn.Search("Test", (result) =>
                 {
                     using (var command = cnn.CreateCommand())
                     {
@@ -70,13 +70,13 @@ namespace DbSearch.Test
                         {
                             var param = command.CreateParameter();
                             param.ParameterName = "newValue";
-                            param.Value = result.COLUMN_VALUE;
+                            param.Value = "Test";
                             command.Parameters.Add(param);
                         }
                         {
                             var param = command.CreateParameter();
                             param.ParameterName = "oldValue";
-                            param.Value = result.COLUMN_VALUE;
+                            param.Value = "Test";
                             command.Parameters.Add(param);
                         }
 
