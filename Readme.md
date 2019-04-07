@@ -84,3 +84,16 @@ var result = connection.Search(123);
 ```
 ![20190407022915-image.png](https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/20190407022915-image.png)
 
+### 5.補充
+
+Q.為何不使用SP來撰寫就好?  
+A.C#撰寫可以使用多連線非同步執行提升速度。
+
+PS.因為個人工作接觸Oracle跟SQLServer居多,對其他資料庫有遺漏或錯誤邏輯的地方,期待讀者能告知。
+
+
+
+
+
+
+
