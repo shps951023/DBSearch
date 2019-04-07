@@ -19,14 +19,10 @@ namespace ConsoleDemo
             using (var cnn = new SqlConnection(_connectionString))
             {
                 cnn.Open();
-                var result = cnn.Search("Test");
+                cnn.Search("Test",result => {
+                    Console.WriteLine($"TableName:{result.TableName}/ColumnName:{result.ColumnName}/MatchCount:{result.MatchCount}");
+                });
             }
-
-            //using (var cnn = new OracleConnection(_connectionString))
-            //{
-            //    cnn.Open();
-            //    var result = cnn.Search("Test");
-            //}
         }
     }
 }

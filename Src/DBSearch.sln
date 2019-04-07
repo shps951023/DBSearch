@@ -14,12 +14,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\Readme.md = ..\Readme.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test SQL Scripts", "Test SQL Scripts", "{8057889B-42D6-4571-9DFC-35344DCD34F8}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SqlScripts", "SqlScripts", "{8057889B-42D6-4571-9DFC-35344DCD34F8}"
 	ProjectSection(SolutionItems) = preProject
-		..\Docs\SQLServerDDL.sql = ..\Docs\SQLServerDDL.sql
+		..\SqlScripts\SQLServerDDL.sql = ..\SqlScripts\SQLServerDDL.sql
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleDemo", "..\Demo\ConsoleDemo\ConsoleDemo.csproj", "{9C292B8D-E7B5-4750-AFEE-2B8A167DA795}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Src", "Src", "{4F313F1B-799B-4438-9152-DDDE40E39B9E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{5F72F5FC-5CCE-46BD-8080-1F7D49CAC169}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +46,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{711FCF41-243C-4F19-8D8A-6FCE845610A7} = {4F313F1B-799B-4438-9152-DDDE40E39B9E}
+		{883F82C9-7938-4348-BE4E-F223735A3A83} = {5F72F5FC-5CCE-46BD-8080-1F7D49CAC169}
+		{9C292B8D-E7B5-4750-AFEE-2B8A167DA795} = {5F72F5FC-5CCE-46BD-8080-1F7D49CAC169}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {88080EFA-4F2B-4D90-A28F-7F478307F390}
