@@ -20,7 +20,7 @@ using (var connection = GetConnection())
 ```C#
 using (var cnn = GetConnection())
 {
-    var data = cnn.Search("%Test%",likeSearch:true);
+    var data = cnn.Search("%Test%");
 }
 ```
 
@@ -28,7 +28,7 @@ using (var cnn = GetConnection())
 ```C#
 using (var cnn = GetConnection())
 {
-    var data = cnn.Search("[A|B]%",likeSearch:true);
+    var data = cnn.Search("[A|B]%");
 }
 ```
 
@@ -46,8 +46,8 @@ static void Replace(object replaceValue,object newValue)
     {
         connection.Search(replaceValue, (result) =>
         {
-            var sql = $"Update {result.TABLE_NAME} set {result.COLUMN_NAME} = @newValue where {result.COLUMN_NAME} = @replaceValue";
-            connection.Execute(sql, new { replaceValue = result.COLUMN_VALUE, newValue }); //Using Dapper ORM
+            var sql = $"Update {result.TableName} set {result.ColumnName} = @newValue where {result.ColumnName} = @replaceValue";
+            connection.Execute(sql, new { replaceValue, newValue }); //Using Dapper ORM
         });
         scope.Complete();
     }

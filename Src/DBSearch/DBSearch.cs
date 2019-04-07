@@ -317,7 +317,7 @@ namespace DbSearch
             var searchType = SearchText.GetType();
             var types = GetConnectionTypeSchema();
             var usingType = types.Where(w => w.DataType == searchType.FullName).Select(s => s.TypeName);
-            columns = columns.Where(w => usingType.Contains(w.DATA_TYPE));
+            columns = columns.Where(w => usingType.Contains(w.DataType));
 
             return columns;
         }
