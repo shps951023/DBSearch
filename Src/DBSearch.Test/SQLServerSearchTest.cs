@@ -2,6 +2,7 @@ using Dapper;
 using System;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Linq;
 using Xunit;
 
 namespace DBSearch.Test
@@ -24,6 +25,17 @@ namespace DBSearch.Test
             using (var cnn = GetConnection())
             {
                 var result = cnn.Search("Test");
+                Assert.True(result.Count() == 2);
+            }
+        }
+
+        [Fact]
+        public void DBSearchMutipleConnection()
+        {
+            using (var cnn = GetConnection())
+            {
+                var result = cnn.Search("Test",connnectionCount:5);
+                Assert.True(result.Count() == 2);
             }
         }
 

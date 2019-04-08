@@ -19,7 +19,8 @@ namespace ConsoleDemo
             using (var cnn = new SqlConnection(_connectionString))
             {
                 cnn.Open();
-                cnn.Search("Test",result => {
+                cnn.Search("Test", result =>
+                {
                     Console.WriteLine($"TableName:{result.TableName}/ColumnName:{result.ColumnName}/MatchCount:{result.MatchCount}");
                 });
             }
