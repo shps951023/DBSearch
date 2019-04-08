@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
 using Oracle.ManagedDataAccess.Client;
-using DbSearch;
+using DBSearch;
 
 namespace ConsoleDemo
 {

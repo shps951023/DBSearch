@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using Xunit;
 
-namespace DbSearch.Test
+namespace DBSearch.Test
 {
     public class SQLServerSearchTest
     {
