@@ -7,24 +7,24 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace DbSearch
+namespace DBSearch
 {
     #region Open Api
-    public static class DbSearch
+    public static class DBSearch
     {
-        public static IEnumerable<DbSearchResult> Search(this DbConnection connection, string searchText, Action<DbSearchResult> action = null)
+        public static IEnumerable<DbSearchResult> Search(this DbConnection connection, string searchText, Action<DbSearchResult> action = null, int connnectionCount = 1)
         {
-            return SearchImpl(connection, searchText, action, true);
+            return SearchImpl(connection, searchText, action, true, connnectionCount);
         }
 
-        public static IEnumerable<DbSearchResult> Search(this DbConnection connection, object searchText, Action<DbSearchResult> action = null)
+        public static IEnumerable<DbSearchResult> Search(this DbConnection connection, object searchText, Action<DbSearchResult> action = null, int connnectionCount = 1)
         {
-            return SearchImpl(connection, searchText, action, false);
+            return SearchImpl(connection, searchText, action, false, connnectionCount);
         }
 
-        private static IEnumerable<DbSearchResult> SearchImpl(DbConnection connection, object searchText, Action<DbSearchResult> action, bool likeSearch)
+        private static IEnumerable<DbSearchResult> SearchImpl(DbConnection connection, object searchText, Action<DbSearchResult> action, bool likeSearch, int connnectionCount)
         {
-            IDbSearch db = null;
+            DbBaseSearch db = null;
             var connectionType = CheckDBConnectionTypeHelper.GetMatchDBType(connection);
             switch (connectionType)
             {
@@ -44,6 +44,7 @@ namespace DbSearch
                 default:
                     db = new DbBaseSearch(connection, searchText, action, (likeSearch ? "like" : "="), "", "", "@"); break;
             }
+            db.ConnectionCount = connnectionCount;
             return db.Search();
         }
     }
@@ -85,88 +86,6 @@ namespace DbSearch
         }
     }
 
-    internal class SqlServerDbSearch : DbBaseSearch, IDbSearch
-    {
-        public SqlServerDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
-        : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
-
-        public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
-        {
-            var tableName = columnDatas.Key;
-            var checkConditionSql = string.Join("or", columnDatas.Select(
-                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
-            );
-            return $"select top 1 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
-        }
-
-        private readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
-          {
-               {typeof(System.Int16)," 'smallint' "},
-               {typeof(System.Int32)," 'int' "},
-               {typeof(System.Single)," 'real' "},
-               {typeof(System.Double)," 'float' "},
-               {typeof(System.Decimal)," 'money','smallmoney','decimal','numeric' "},
-               {typeof(System.Boolean)," 'bit' "},
-               {typeof(System.SByte)," 'tinyint' "},
-               {typeof(System.Int64)," 'bigint' "},
-               {typeof(System.Byte[])," 'timestamp','binary','image','varbinary' "},
-               {typeof(System.String)," 'text','ntext','xml','varchar','char','nchar','nvarchar' "},
-               {typeof(System.DateTime)," 'datetime','smalldatetime','date','datetime2' "},
-               {typeof(System.Object)," 'sql_variant' "},
-               {typeof(System.Guid)," 'uniqueidentifier' "},
-               {typeof(System.TimeSpan)," 'time' "},
-               {typeof(System.DateTimeOffset)," 'datetimeoffset' "},
-          };
-
-        public override IEnumerable<ConnectionColumn> GetConnectionColumns()
-        {
-            var type = SearchText.GetType();
-
-            if (!_MapperDictionary.TryGetValue(type, out string conditionSql))
-                throw new NotSupportedException($"{type.FullName} not support");
-
-            var sql = $@"
-                    select 
-	                    T2.TABLE_CATALOG 
-                        ,T2.TABLE_SCHEMA 
-                        ,T2.TABLE_NAME 
-                        ,T1.COLUMN_NAME
-                        ,T1.DATA_TYPE
-	                   ,T1.IS_NULLABLE
-                    from INFORMATION_SCHEMA.COLUMNS T1 with (nolock)
-                    left join INFORMATION_SCHEMA.TABLES T2 on T1.TABLE_NAME = T2.TABLE_NAME
-                    where 1 =1  and Table_Type = 'BASE TABLE' 
-	                     and T1.DATA_TYPE in ({conditionSql}) 
-                          {((SearchText is string)
-                            ? $"and T1.DATA_LENGTH >= {SearchText.ToString().Length} " /*If the maximum length is less than the data itself, it is not necessary to include the search*/
-                            : ""  
-                          )}
-                ";
-
-            Command.CommandText = sql;
-
-            var result = new List<ConnectionColumn>();
-            using (var reader = Command.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    var data = new ConnectionColumn()
-                    {
-                        TableCatalog = reader.GetString(0),
-                        TableSchema = reader.GetString(1),
-                        TableName = reader.GetString(2),
-                        ColumnName = reader.GetString(3),
-                        DataType = reader.GetString(4),
-                        IsNullable = reader.GetString(5),
-                    };
-                    result.Add(data);
-                }
-            }
-
-            return result;
-        }
-    }
-
     internal class SqliteDbSearch : DbBaseSearch, IDbSearch
     {
         public SqliteDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
@@ -197,79 +116,7 @@ namespace DbSearch
         }
     }
 
-    internal class OracleDbSearch : DbBaseSearch, IDbSearch
-    {
-        public OracleDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
-        : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
-
-        public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
-        {
-            var tableName = columnDatas.Key;
-            var checkConditionSql = string.Join("or", columnDatas.Select(
-                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
-            );
-            return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} rownum = 1 ";
-        }
-
-        private readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
-          {
-               {typeof(System.Byte[])," 'BFILE','BLOB','LONG RAW','RAW' "},
-               {typeof(System.Double)," 'BINARY_DOUBLE' "},
-               {typeof(System.Single)," 'BINARY_FLOAT' "},
-               {typeof(System.String)," 'CHAR','CLOB','LONG','NCHAR','NCLOB','NVARCHAR2','VARCHAR2','XMLTYPE','ROWID' "},
-               {typeof(System.DateTime)," 'DATE','TIMESTAMP','TIMESTAMP(6)','TIMESTAMP(3)' "},
-               {typeof(System.Decimal)," 'FLOAT','NUMBER' "},
-          };
-
-        public override IEnumerable<ConnectionColumn> GetConnectionColumns()
-        {
-            var type = SearchText.GetType();
-
-            if (!_MapperDictionary.TryGetValue(type, out string conditionSql))
-                throw new NotSupportedException($"{type.FullName} not support");
-
-            var sql = $@"
-                    select 
-                        TABLE_NAME,
-                        COLUMN_NAME,
-                        DATA_TYPE,
-                        NULLABLE as IS_NULLABLE
-                    from user_tab_columns 
-                    where 1=1 
-                        and table_name not in (select View_name from user_views)
-	                   and DATA_TYPE in ({conditionSql}) 
-                        {((SearchText is string)
-                            ? $"and DATA_LENGTH >= {SearchText.ToString().Length} " /*If the maximum length is less than the data itself, it is not necessary to include the search*/
-                            : ""
-                        )}
-                ";
-            Command.CommandText = sql;
-
-            var result = new List<ConnectionColumn>();
-            var connectionInfo = Connection.GetToStringValues();
-            using (var reader = Command.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    var data = new ConnectionColumn()
-                    {
-                        TableCatalog = connectionInfo["DatabaseName"],
-                        TableSchema = connectionInfo["InstanceName"],
-                        TableName = reader.GetString(0),
-                        ColumnName = reader.GetString(1),
-                        DataType = reader.GetString(2),
-                        IsNullable = reader.GetString(3),
-                    };
-                    result.Add(data);
-                }
-            }
-
-            return result;
-        }
-    }
-
-    internal class
-         DbBaseSearch : IDbSearch
+    internal class DbBaseSearch : IDbSearch
     {
         public DbConnection Connection { get; set; }
         public DbCommand Command { get; set; }
@@ -280,6 +127,7 @@ namespace DbSearch
         public string RightSymbol { get; set; }
         public string ParameterSymbol { get; set; }
         public Action<DbSearchResult> Action { get; set; }
+        public int ConnectionCount { get; set; } = 1;
 
         public DbBaseSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
         {
@@ -305,18 +153,48 @@ namespace DbSearch
         {
             using (Command = Connection.CreateCommand())
             {
-                var param = Command.CreateParameter();
-                param.ParameterName = $"{ParameterSymbol}p";
-                param.Value = SearchText;
-                Command.Parameters.Add(param);
+                AddParameter(Command);
 
-                var columns = GetConnectionColumns();
-                columns.GroupBy(g => g.TableName).Where(p =>
+                var columns = new ConcurrentBag<ConnectionColumn>();
+                if (ConnectionCount == 1)
                 {
-                    Command.CommandText = GetCheckSQL(p);
-                    var exist = (Command.ExecuteScalar() as int?) == 1;
-                    return exist;
-                });
+                    GetConnectionColumns().GroupBy(g => g.TableName).ToList().ForEach(p =>
+                    {
+                        Command.CommandText = GetCheckSQL(p);
+                        var exist = (Command.ExecuteScalar() as int?) == 1;
+                        if (exist)
+                            foreach (var item in p)
+                                columns.Add(item);
+                    });
+                }
+                else if (ConnectionCount > 1)
+                {
+                    var connectionType = Connection.GetType();
+                    var _columnsList = GetConnectionColumns().GroupBy(g => g.TableName).ToList();
+                    _columnsList.GroupBy(g => _columnsList.IndexOf(g) % ConnectionCount).AsParallel().ForAll(s =>
+                    {
+                        using (var _connection = (Activator.CreateInstance(connectionType) as DbConnection))
+                        {
+                            using (var _command = _connection.CreateCommand())
+                            {
+                                _connection.ConnectionString = Connection.ConnectionString;
+                                AddParameter(_command);
+                                _connection.Open();
+
+                                foreach (var p in s)
+                                {
+                                    _command.CommandText = GetCheckSQL(p);
+                                    var exist = (_command.ExecuteScalar() as int?) == 1;
+                                    if (exist)
+                                        foreach (var item in p)
+                                            columns.Add(item);
+                                }
+                            }
+                        }
+                    });
+                }
+
+
 
                 var results = new List<DbSearchResult>();
                 foreach (var column in columns)
@@ -324,7 +202,7 @@ namespace DbSearch
                     var tableName = column.TableName;
                     var matchCountSql = $@"
                         select count(1) MatchCount
-						from {LeftSymbol}{tableName}{RightSymbol} 
+				    from {LeftSymbol}{tableName}{RightSymbol} 
                         where {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p  ";
                     Command.CommandText = matchCountSql;
 
@@ -348,6 +226,14 @@ namespace DbSearch
                 }
                 return results;
             }
+        }
+
+        private void AddParameter(DbCommand command)
+        {
+            var param = command.CreateParameter();
+            param.ParameterName = $"{ParameterSymbol}p";
+            param.Value = SearchText;
+            command.Parameters.Add(param);
         }
 
         public virtual IEnumerable<ConnectionColumn> GetConnectionColumns()
@@ -438,7 +324,6 @@ namespace DbSearch
         public string TypeName { get; set; }
     }
 
-
     #endregion
 
     #region Extensions
@@ -525,21 +410,12 @@ namespace DbSearch
 
         private static Func<TParam, TReturn> GetCastObjectFunction(PropertyInfo prop)
         {
-            try
-            {
-                var instance = Expression.Parameter(typeof(TReturn), "i");
-                var convert = Expression.TypeAs(instance, prop.DeclaringType);
-                var property = Expression.Property(convert, prop);
-                var cast = Expression.TypeAs(property, typeof(TReturn));
-                var lambda = Expression.Lambda<Func<TParam, TReturn>>(cast, instance);
-                return lambda.Compile();
-            }
-            catch (Exception ex)
-            {
-
-                throw;
-            }
-
+            var instance = Expression.Parameter(typeof(TReturn), "i");
+            var convert = Expression.TypeAs(instance, prop.DeclaringType);
+            var property = Expression.Property(convert, prop);
+            var cast = Expression.TypeAs(property, typeof(TReturn));
+            var lambda = Expression.Lambda<Func<TParam, TReturn>>(cast, instance);
+            return lambda.Compile();
         }
     }
 

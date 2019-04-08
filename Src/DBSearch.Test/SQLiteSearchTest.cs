@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using Xunit;
 
-namespace DbSearch.Test
+namespace DBSearch.Test
 {
     public class SQLiteSearchTest
     {
