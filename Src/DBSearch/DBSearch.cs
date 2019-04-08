@@ -109,7 +109,7 @@ namespace DBSearch
                     GetConnectionColumns().GroupBy(g => g.TableName).ToList().ForEach(p =>
                     {
                         Command.CommandText = GetCheckSQL(p);
-                        var exist = (Command.ExecuteScalar() as int?) == 1;
+                        var exist = Convert.ToInt32(Command.ExecuteScalar()) == 1;
                         if (exist)
                             foreach (var item in p)
                                 columns.Add(item);
@@ -132,7 +132,7 @@ namespace DBSearch
                                 foreach (var p in s)
                                 {
                                     _command.CommandText = GetCheckSQL(p);
-                                    var exist = (_command.ExecuteScalar() as int?) == 1;
+                                    var exist = Convert.ToInt32(_command.ExecuteScalar()) == 1;
                                     if (exist)
                                         foreach (var item in p)
                                             columns.Add(item);

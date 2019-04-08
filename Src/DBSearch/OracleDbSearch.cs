@@ -17,7 +17,8 @@ namespace DBSearch
             var checkConditionSql = string.Join("or", columnDatas.Select(
                   (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
             );
-            return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} rownum = 1 ";
+            var sql = $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where 1=1 and ( {checkConditionSql} ) and rownum = 1 ";
+            return sql;
         }
 
         private readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
@@ -55,15 +56,19 @@ namespace DBSearch
             Command.CommandText = sql;
 
             var result = new List<ConnectionColumn>();
+            
             var connectionInfo = Connection.GetToStringValues();
+            connectionInfo.TryGetValue("DatabaseName", out string databaseName);
+            connectionInfo.TryGetValue("InstanceName", out string instanceName);
+
             using (var reader = Command.ExecuteReader())
             {
                 while (reader.Read())
                 {
                     var data = new ConnectionColumn()
                     {
-                        TableCatalog = connectionInfo["DatabaseName"],
-                        TableSchema = connectionInfo["InstanceName"],
+                        TableCatalog = databaseName,
+                        TableSchema = instanceName,
                         TableName = reader.GetString(0),
                         ColumnName = reader.GetString(1),
                         DataType = reader.GetString(2),
