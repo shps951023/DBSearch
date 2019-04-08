@@ -8,7 +8,7 @@ namespace DBSearch
 {
     internal class OracleDbSearch : DbBaseSearch, IDbSearch
     {
-        public OracleDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
+        public OracleDbSearch(DbConnection connection, object searchText, Action<DBSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
         : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
 
         public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)

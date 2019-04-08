@@ -34,7 +34,17 @@ namespace DBSearch.Test
         {
             using (var cnn = GetConnection())
             {
-                var result = cnn.Search("Test",connnectionCount:5);
+                var result = cnn.Search("Test",connectionCount:5 );
+                Assert.True(result.Count() == 2);
+            }
+        }
+
+        //[Fact]
+        public void DBSearchMutipleConnectionNeedPassword()
+        {
+            using (var cnn = GetConnection())
+            {
+                var result = cnn.Search("Test", connectionCount: 5, connectionString: @"Data Source=(localdb)\MSSQLLocalDB;User ID=sa;Password=123456;Initial Catalog=DBSearchTestDB;");
                 Assert.True(result.Count() == 2);
             }
         }

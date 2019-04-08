@@ -12,17 +12,17 @@ namespace DBSearch
     #region Open Api
     public static class DBSearch
     {
-        public static IEnumerable<DbSearchResult> Search(this DbConnection connection, string searchText, Action<DbSearchResult> action = null, int connnectionCount = 1)
+        public static IEnumerable<DBSearchResult> Search(this DbConnection connection, string searchText, Action<DBSearchResult> action = null, int connectionCount = 1, string connectionString = null)
         {
-            return SearchImpl(connection, searchText, action, true, connnectionCount);
+            return Search(connection, searchText, action, true, connectionCount, connectionString);
         }
 
-        public static IEnumerable<DbSearchResult> Search(this DbConnection connection, object searchText, Action<DbSearchResult> action = null, int connnectionCount = 1)
+        public static IEnumerable<DBSearchResult> Search(this DbConnection connection, object searchText, Action<DBSearchResult> action = null, int connectionCount = 1,string connectionString = null)
         {
-            return SearchImpl(connection, searchText, action, false, connnectionCount);
+            return Search(connection, searchText, action, false, connectionCount, connectionString);
         }
 
-        private static IEnumerable<DbSearchResult> SearchImpl(DbConnection connection, object searchText, Action<DbSearchResult> action, bool likeSearch, int connnectionCount)
+        private static IEnumerable<DBSearchResult> Search(DbConnection connection, object searchText, Action<DBSearchResult> action, bool likeSearch, int connectionCount, string connectionString)
         {
             DbBaseSearch db = null;
             var connectionType = CheckDBConnectionTypeHelper.GetMatchDBType(connection);
@@ -40,11 +40,12 @@ namespace DBSearch
                 case DBConnectionType.Firebird:
                     db = new FirebirdDbSearch(connection, searchText, action, (likeSearch ? "like" : "="), "\"", "\"", "?"); break;
                 case DBConnectionType.Postgres:
-                    db = new NpgSqlDbSearch(connection, searchText, action, (likeSearch ? "like" : "="), "\"", "\"", "@"); break;
+                    db = new PgSqlDbSearch(connection, searchText, action, (likeSearch ? "like" : "="), "\"", "\"", "@"); break;
                 default:
                     db = new DbBaseSearch(connection, searchText, action, (likeSearch ? "like" : "="), "", "", "@"); break;
             }
-            db.ConnectionCount = connnectionCount;
+            db.ConnectionCount = connectionCount;
+            db.ConnectionString = connectionString;
             return db.Search();
         }
     }
@@ -53,72 +54,13 @@ namespace DBSearch
     #region interface and implementation
     internal interface IDbSearch
     {
-        IEnumerable<DbSearchResult> Search();
-    }
-
-    internal class MySqlDbSearch : DbBaseSearch, IDbSearch
-    {
-        public MySqlDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
-        : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
-
-        public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
-        {
-            var tableName = columnDatas.Key;
-            var checkConditionSql = string.Join("or", columnDatas.Select(
-                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
-            );
-            return $"select  1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} LIMIT 1 ";
-        }
-    }
-
-    internal class FirebirdDbSearch : DbBaseSearch, IDbSearch
-    {
-        public FirebirdDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
-        : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
-
-        public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
-        {
-            var tableName = columnDatas.Key;
-            var checkConditionSql = string.Join("or", columnDatas.Select(
-                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
-            );
-            return $"select  FIRST 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql}  ";
-        }
-    }
-
-    internal class SqliteDbSearch : DbBaseSearch, IDbSearch
-    {
-        public SqliteDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
-        : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
-
-        public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
-        {
-            var tableName = columnDatas.Key;
-            var checkConditionSql = string.Join("or", columnDatas.Select(
-                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
-            );
-            return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} LIMIT 1 ";
-        }
-    }
-
-    internal class NpgSqlDbSearch : DbBaseSearch, IDbSearch
-    {
-        public NpgSqlDbSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
-        : base(connection, searchText, action, comparisonOperator, leftSymbol, rightSymbol, parameterSymbol) { }
-
-        public override string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
-        {
-            var tableName = columnDatas.Key;
-            var checkConditionSql = string.Join("or", columnDatas.Select(
-                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
-            );
-            return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} Limit 1 ";
-        }
+        IEnumerable<DBSearchResult> Search();
     }
 
     internal class DbBaseSearch : IDbSearch
     {
         public DbConnection Connection { get; set; }
+        public string ConnectionString { get; set; }
         public DbCommand Command { get; set; }
 
         public object SearchText { get; set; }
@@ -126,10 +68,10 @@ namespace DBSearch
         public string LeftSymbol { get; set; }
         public string RightSymbol { get; set; }
         public string ParameterSymbol { get; set; }
-        public Action<DbSearchResult> Action { get; set; }
+        public Action<DBSearchResult> Action { get; set; }
         public int ConnectionCount { get; set; } = 1;
 
-        public DbBaseSearch(DbConnection connection, object searchText, Action<DbSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
+        public DbBaseSearch(DbConnection connection, object searchText, Action<DBSearchResult> action, string comparisonOperator = "=", string leftSymbol = "", string rightSymbol = "", string parameterSymbol = "@")
         {
             Connection = connection;
             SearchText = searchText;
@@ -149,8 +91,14 @@ namespace DBSearch
             return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
         }
 
-        public virtual IEnumerable<DbSearchResult> Search()
+        public virtual IEnumerable<DBSearchResult> Search()
         {
+            if (this.ConnectionString == null)
+                this.ConnectionString = Connection.ConnectionString;
+
+            bool wasClosed = Connection.State == ConnectionState.Closed;
+            if (wasClosed) Connection.Open();
+
             using (Command = Connection.CreateCommand())
             {
                 AddParameter(Command);
@@ -173,11 +121,11 @@ namespace DBSearch
                     var _columnsList = GetConnectionColumns().GroupBy(g => g.TableName).ToList();
                     _columnsList.GroupBy(g => _columnsList.IndexOf(g) % ConnectionCount).AsParallel().ForAll(s =>
                     {
-                        using (var _connection = (Activator.CreateInstance(connectionType) as DbConnection))
+                        using (var _connection = (Activator.CreateInstance(connectionType, this.ConnectionString) as DbConnection))
                         {
                             using (var _command = _connection.CreateCommand())
                             {
-                                _connection.ConnectionString = Connection.ConnectionString;
+                                _connection.ConnectionString = this.ConnectionString;
                                 AddParameter(_command);
                                 _connection.Open();
 
@@ -194,9 +142,7 @@ namespace DBSearch
                     });
                 }
 
-
-
-                var results = new List<DbSearchResult>();
+                var results = new List<DBSearchResult>();
                 foreach (var column in columns)
                 {
                     var tableName = column.TableName;
@@ -209,7 +155,7 @@ namespace DBSearch
                     var matchCount = Convert.ToInt64(Command.ExecuteScalar());
                     if (matchCount > 0)
                     {
-                        var data = new DbSearchResult()
+                        var data = new DBSearchResult()
                         {
                             TableSchema = column.TableSchema,
                             TableCatalog = column.TableCatalog,
@@ -289,7 +235,7 @@ namespace DBSearch
 
     #region Models
 
-    public class DbSearchResult
+    public class DBSearchResult
     {
         public string TableSchema { get; set; }
         public string TableCatalog { get; set; }
@@ -353,7 +299,7 @@ namespace DBSearch
         SqlServer, SqlCeServer, Postgres, SQLite, MySql, Oracle, Firebird, Unknown
     }
 
-    public static partial class ValueGetter
+    internal static partial class ValueGetter
     {
         /// <summary>
         /// Compiler Method Like:
@@ -376,7 +322,7 @@ namespace DBSearch
              => instance != null ? ValueGetterCache<T, object>.GetOrAddFunctionCache(propertyInfo)(instance)?.ToString() : null;
     }
 
-    public static partial class ValueGetter
+    internal static partial class ValueGetter
     {
         /// <summary>
         /// Compiler Method Like:
@@ -419,7 +365,7 @@ namespace DBSearch
         }
     }
 
-    public static partial class PropertyCacheHelper
+    internal static partial class PropertyCacheHelper
     {
         private static readonly Dictionary<RuntimeTypeHandle, IList<PropertyInfo>> TypePropertiesCache = new Dictionary<RuntimeTypeHandle, IList<PropertyInfo>>();
 
