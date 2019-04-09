@@ -106,10 +106,11 @@ namespace DBSearch
                 var columns = new ConcurrentBag<ConnectionColumn>();
                 if (ConnectionCount == 1)
                 {
-                    GetConnectionColumns().GroupBy(g => g.TableName).ToList().ForEach(p =>
+                    var list = GetConnectionColumns().GroupBy(g => g.TableName).ToList();
+                    list.ForEach(p =>
                     {
                         Command.CommandText = GetCheckSQL(p);
-                        var exist = (Command.ExecuteScalar() as int?) == 1;
+                        var exist = Convert.ToInt32(Command.ExecuteScalar()) == 1;
                         if (exist)
                             foreach (var item in p)
                                 columns.Add(item);
@@ -132,7 +133,7 @@ namespace DBSearch
                                 foreach (var p in s)
                                 {
                                     _command.CommandText = GetCheckSQL(p);
-                                    var exist = (_command.ExecuteScalar() as int?) == 1;
+                                    var exist = Convert.ToInt32(_command.ExecuteScalar()) == 1;
                                     if (exist)
                                         foreach (var item in p)
                                             columns.Add(item);
@@ -184,51 +185,28 @@ namespace DBSearch
 
         public virtual IEnumerable<ConnectionColumn> GetConnectionColumns()
         {
-            var table = GetConnectionTable();
-            var columns = Connection.GetSchema("Columns").Select().Select(s =>
-                  new ConnectionColumn
-                  {
-                      TableCatalog = s["TABLE_CATALOG"] as string,
-                      TableSchema = s["TABLE_SCHEMA"] as string,
-                      TableName = s["TABLE_NAME"] as string,
-                      ColumnName = s["COLUMN_NAME"] as string,
-                      DataType = s["DATA_TYPE"] as string,
-                      IsNullable = s["IS_NULLABLE"] as string,
-                  }).Join(table, t1 => new { t1.TableCatalog, t1.TableSchema, t1.TableName },
-                      t2 => new { t2.TableCatalog, t2.TableSchema, t2.TableName }, (t1, t2) => t1
-                  ); /*only need table type*/
-
             //Logic: like string search, no need to search date and numeric type, also can avoid error caused by type inconsistency
             var searchType = SearchText.GetType();
-            var types = GetConnectionTypeSchema();
-            var usingType = types.Where(w => w.DataType == searchType.FullName).Select(s => s.TypeName);
-            columns = columns.Where(w => usingType.Contains(w.DataType));
+            var dataTypes = Connection.GetSchema("DataTypes").Select().Where(w => (w["DataType"] as string) != null);
+            var usingType = dataTypes.Where(w => (w["DataType"] as string) == searchType.FullName).Select(s => (s["TypeName"] as string).ToLower()).ToArray();
+
+            var table = Connection.GetSchema("Tables").Select()
+                 .Where(w => (w["TABLE_TYPE"] as string).ToLower().IndexOf("table") != -1) /*The purpose is to filter out the View*/
+                 .Select(s => (s["TABLE_NAME"] as string).ToLower()).ToArray();
+            var columnSchma = Connection.GetSchema("Columns");
+            var columns = Connection.GetSchema("Columns").Select().Where(w => table.Contains((w["TABLE_NAME"] as string).ToLower()))
+                 .Where(w => usingType.Contains((w["DATA_TYPE"] as string).ToLower()))
+                 .Select(s => new ConnectionColumn
+                 {
+                     TableCatalog = s["TABLE_CATALOG"] as string,
+                     TableSchema = s["TABLE_SCHEMA"] as string,
+                     TableName = s["TABLE_NAME"] as string,
+                     ColumnName = s["COLUMN_NAME"] as string,
+                     DataType = s["DATA_TYPE"] as string,
+                     IsNullable = s["IS_NULLABLE"] as string,
+                 });
 
             return columns;
-        }
-
-        public virtual IEnumerable<ConnectionTable> GetConnectionTable()
-        {
-            var table = Connection.GetSchema("Tables");
-            var data = table.Select()
-                  .Where(w => (w["TABLE_TYPE"] as string).ToLower().IndexOf("table") != -1) /*The purpose is to filter out the View*/
-                  .Select(s =>
-                      new ConnectionTable
-                      {
-                          TableCatalog = s["TABLE_CATALOG"] as string,
-                          TableSchema = s["TABLE_SCHEMA"] as string,
-                          TableName = s["TABLE_NAME"] as string,
-                          TableType = s["TABLE_TYPE"] as string
-                      });
-            return data;
-        }
-
-        public virtual IEnumerable<ConnectionDataType> GetConnectionTypeSchema()
-        {
-            var DataTypes = Connection.GetSchema("DataTypes");
-            var data = DataTypes.Select().Select(s => new ConnectionDataType { DataType = s["DataType"] as string, TypeName = s["TypeName"] as string })
-                  .Where(w => w.DataType != null);
-            return data;
         }
     }
     #endregion
@@ -255,21 +233,6 @@ namespace DBSearch
         public string DataType { get; set; }
         public string IsNullable { get; set; }
     }
-
-    internal class ConnectionTable
-    {
-        public string TableCatalog { get; set; }
-        public string TableSchema { get; set; }
-        public string TableName { get; set; }
-        public string TableType { get; set; }
-    }
-
-    internal class ConnectionDataType
-    {
-        public string DataType { get; set; }
-        public string TypeName { get; set; }
-    }
-
     #endregion
 
     #region Extensions

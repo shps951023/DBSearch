@@ -69,6 +69,7 @@ select * from [Table2]
             using (var cnn = GetSQLiteConnection())
             {
                 var data = cnn.Search("Test");
+                Assert.True(data.Count() == 4);
             }
         }
     }
