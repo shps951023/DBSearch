@@ -16,7 +16,7 @@ namespace DBSearch
             var checkConditionSql = string.Join("or", columnDatas.Select(
                   (column) => $" [{column.ColumnName}] {ComparisonOperator} @p ").ToArray()
             );
-            return string.Format("select top 1 1 from [0] with (nolock)  where {1} ", tableName, checkConditionSql);
+            return string.Format("select top 1 1 from {0} with (nolock)  where {1} ", tableName, checkConditionSql);
         }
 
         private readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
