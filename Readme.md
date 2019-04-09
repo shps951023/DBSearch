@@ -1,3 +1,7 @@
+> 【注意】目前版本處於Beta測試階段,請勿使用在商業環境。
+
+---
+
 ### Features
 - 輕量、簡單易用 (只需懂`Search`方法)
 - 支持`net45;net451;net46;netstandard2.0;`
@@ -5,6 +9,21 @@
 - 簡單多Connection加快查詢
 - 自動類型判斷
 - 支持 SQL Server、Oracle、SQLite (其他MySQL、PGSQL、Firebird資料庫現在是Beta版本支持,假如使用上有問題麻煩告知提ISSUE)
+
+
+### 安裝
+
+可以安裝套件從 [NuGet連結](https://www.nuget.org/packages/HtmlTableHelper) 使用 Visual Studio Package Manager 或是 NuGet UI:
+
+```cmd
+PM> install-package DBSearch
+```
+
+或是 `dotnet` command line:
+
+```cmd
+dotnet add package DBSearch
+```
 
 
 ### Get Start

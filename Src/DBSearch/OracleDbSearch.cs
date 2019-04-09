@@ -17,7 +17,6 @@ namespace DBSearch
             var checkConditionSql = string.Join("or", columnDatas.Select(
                   (column) => $@" ""{column.ColumnName}"" {ComparisonOperator} :p ").ToArray()
             );
-            Console.WriteLine(checkConditionSql);
             var sql = $@"select 1 from ""{tableName}""  where 1=1 and ( {checkConditionSql} ) and rownum = 1 ";
             return sql;
         }
@@ -57,7 +56,6 @@ namespace DBSearch
             Command.CommandText = sql;
 
             var result = new List<ConnectionColumn>();
-            Console.WriteLine(sql);
             
             var connectionInfo = Connection.GetToStringValues();
             connectionInfo.TryGetValue("DatabaseName", out string databaseName);
