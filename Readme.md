@@ -7,6 +7,21 @@
 - 支持 SQL Server、Oracle、SQLite (其他MySQL、PGSQL、Firebird資料庫現在是Beta版本支持,假如使用上有問題麻煩告知提ISSUE)
 
 
+### 安裝
+
+可以安裝套件從 [NuGet連結](https://www.nuget.org/packages/HtmlTableHelper) 使用 Visual Studio Package Manager 或是 NuGet UI:
+
+```cmd
+PM> install-package DBSearch
+```
+
+或是 `dotnet` command line:
+
+```cmd
+dotnet add package DBSearch
+```
+
+
 ### Get Start
 
 #### 明確查詢
