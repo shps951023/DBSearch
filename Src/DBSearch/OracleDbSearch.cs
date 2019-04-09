@@ -15,21 +15,22 @@ namespace DBSearch
         {
             var tableName = columnDatas.Key;
             var checkConditionSql = string.Join("or", columnDatas.Select(
-                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+                  (column) => $@" ""{column.ColumnName}"" {ComparisonOperator} :p ").ToArray()
             );
-            var sql = $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where 1=1 and ( {checkConditionSql} ) and rownum = 1 ";
+            Console.WriteLine(checkConditionSql);
+            var sql = $@"select 1 from ""{tableName}""  where 1=1 and ( {checkConditionSql} ) and rownum = 1 ";
             return sql;
         }
 
         private readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
-          {
-               {typeof(System.Byte[])," 'BFILE','BLOB','LONG RAW','RAW' "},
-               {typeof(System.Double)," 'BINARY_DOUBLE' "},
-               {typeof(System.Single)," 'BINARY_FLOAT' "},
-               {typeof(System.String)," 'CHAR','CLOB','LONG','NCHAR','NCLOB','NVARCHAR2','VARCHAR2','XMLTYPE','ROWID' "},
-               {typeof(System.DateTime)," 'DATE','TIMESTAMP','TIMESTAMP(6)','TIMESTAMP(3)' "},
-               {typeof(System.Decimal)," 'FLOAT','NUMBER' "},
-          };
+        {
+            {typeof(System.Byte[])," 'BFILE','BLOB','LONG RAW','RAW' "},
+            {typeof(System.Double)," 'BINARY_DOUBLE' "},
+            {typeof(System.Single)," 'BINARY_FLOAT' "},
+            {typeof(System.String)," 'CHAR','CLOB','LONG','NCHAR','NCLOB','NVARCHAR2','VARCHAR2','XMLTYPE','ROWID' "},
+            {typeof(System.DateTime)," 'DATE','TIMESTAMP','TIMESTAMP(6)','TIMESTAMP(3)' "},
+            {typeof(System.Decimal)," 'FLOAT','NUMBER' "},
+        };
 
         public override IEnumerable<ConnectionColumn> GetConnectionColumns()
         {
@@ -56,6 +57,7 @@ namespace DBSearch
             Command.CommandText = sql;
 
             var result = new List<ConnectionColumn>();
+            Console.WriteLine(sql);
             
             var connectionInfo = Connection.GetToStringValues();
             connectionInfo.TryGetValue("DatabaseName", out string databaseName);

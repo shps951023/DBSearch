@@ -1,10 +1,11 @@
 ### Features
-- 簡單易用 (只需懂`Search`方法)
-- 支持`net35;net40;net45;net451;net46;netstandard2.0;`
+- 輕量、簡單易用 (只需懂`Search`方法)
+- 支持`net45;net451;net46;netstandard2.0;`
 - 不依賴任何第三方套件
-- 支持 SQL Server、Oracle、SQLite (其他MySQL、PGSQL、Firebird資料庫理論上有機會支持,假如不行麻煩告知提ISSUE)
 - 簡單多Connection加快查詢
 - 自動類型判斷
+- 支持 SQL Server、Oracle、SQLite (其他MySQL、PGSQL、Firebird資料庫現在是Beta版本支持,假如使用上有問題麻煩告知提ISSUE)
+
 
 ### Get Start
 
@@ -42,7 +43,7 @@ using (var cnn = GetConnection())
 var data = cnn.Search("Test",connnectionCount=10);
 ```
 
-【注意】假如連接字串使用帳號密碼方式,需要輸入connectionString參數
+【注意】假如連接字串使用帳號密碼方式,需要輸入connectionString參數,為何要如此麻煩可以看這篇[ConnectionString loses password](https://stackoverflow.com/questions/12467335/connectionstring-loses-password-after-connection-open).
 ```C#
 var data = cnn.Search("Test",connnectionCount=10,connectionString=@"Data Source=192.168.1.1;User ID=sa;Password=123456;Initial Catalog=master;");
 ```

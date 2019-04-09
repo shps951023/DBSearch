@@ -14,9 +14,9 @@ namespace DBSearch
         {
             var tableName = columnDatas.Key;
             var checkConditionSql = string.Join("or", columnDatas.Select(
-                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+                  (column) => $" [{column.ColumnName}] {ComparisonOperator} @p ").ToArray()
             );
-            return $"select top 1 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
+            return $"select top 1 1 from [{tableName}]  where {checkConditionSql} ";
         }
 
         private readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
