@@ -16,7 +16,7 @@ namespace DBSearch
             var checkConditionSql = string.Join("or", columnDatas.Select(
                   (column) => $" [{column.ColumnName}] {ComparisonOperator} @p ").ToArray()
             );
-            return $"select top 1 1 from [{tableName}]  where {checkConditionSql} ";
+            return string.Format("select top 1 1 from {0} with (nolock)  where {1} ", tableName, checkConditionSql);
         }
 
         private readonly static Dictionary<Type, string> _MapperDictionary = new Dictionary<Type, string>()
@@ -54,7 +54,7 @@ namespace DBSearch
                         ,T1.DATA_TYPE
 	                   ,T1.IS_NULLABLE
                     from INFORMATION_SCHEMA.COLUMNS T1 with (nolock)
-                    left join INFORMATION_SCHEMA.TABLES T2 on T1.TABLE_NAME = T2.TABLE_NAME
+                    left join INFORMATION_SCHEMA.TABLES T2 with (nolock) on T1.TABLE_NAME = T2.TABLE_NAME
                     where 1 =1  and Table_Type = 'BASE TABLE' 
 	                     and T1.DATA_TYPE in ({conditionSql}) 
                           {((SearchText is string)

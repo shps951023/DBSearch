@@ -6,23 +6,30 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
     <Authors>ITWeiHan</Authors>
-    <Description>
-      Mini/Fast Mutiple DBMS Search All Table For One Value
-      More Details in Github Link : [DBSearch: Mini/Faster Object Property Value Getter. ](https://github.com/shps951023/DBSearch)
-    </Description>
+    <Description>More Details in Github Link : [DBSearch : Mini/Fast Multiple DBMS Search](https://github.com/shps951023/DBSearch)</Description>
     <Copyright>©2019 WeiHan Lin</Copyright>
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/shps951023/DBSearch</PackageProjectUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/shps951023/ImageHosting/master/img/2019-01-17.13.18.32-image.png</PackageIconUrl>
 
-    <AssemblyVersion>0.9.0</AssemblyVersion>
-    <FileVersion>0.9.0</FileVersion>
-    <Version>0.9.0</Version>
+    <AssemblyVersion>0.9.1</AssemblyVersion>
+    <FileVersion>0.9.1</FileVersion>
+    <Version>0.9.1</Version>
     <PackageId>DBSearch</PackageId>
     <NeutralLanguage>en</NeutralLanguage>
     <Product>DBSearch</Product>
     <PackageTags>DBSearch,Search,SQL,Mini,Easy</PackageTags>
     <RepositoryType>Github</RepositoryType>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageReleaseNotes>
+### version 0.9.1
+- [X] Fix SqlServer Query SQL By `with (nolock)` from issue (https://github.com/shps951023/DBSearch/issues/23)
+
+### version 0.9.0
+- [X] Support Oracle
+- [X] Support SqlServer
+- [X] Support Sqlite
+- [X] Support Mutiple Connection Query
+- [X] Support Automatic Type Identification
+- [X] Support net45;net451;net46;netstandard2.0;</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

@@ -1,3 +1,7 @@
+
+### version 0.9.1
+- [X] Fix SqlServer Query SQL By `with (nolock)` from issue (https://github.com/shps951023/DBSearch/issues/23)
+
 ### version 0.9.0
 - [X] Support Oracle
 - [X] Support SqlServer
