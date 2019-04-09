@@ -1,3 +1,7 @@
+> 【注意】目前版本處於Beta測試階段,請勿使用在商業環境。
+
+---
+
 ### Features
 - 輕量、簡單易用 (只需懂`Search`方法)
 - 支持`net45;net451;net46;netstandard2.0;`
