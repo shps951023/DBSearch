@@ -46,6 +46,7 @@ namespace DBSearch
             }
             db.ConnectionCount = connectionCount;
             db.ConnectionString = connectionString;
+            db.DBConnectionType = connectionType;
             return db.Search();
         }
     }
@@ -62,6 +63,7 @@ namespace DBSearch
         public DbConnection Connection { get; set; }
         public string ConnectionString { get; set; }
         public DbCommand Command { get; set; }
+        internal DBConnectionType DBConnectionType { get; set; }
 
         public object SearchText { get; set; }
         public string ComparisonOperator { get; set; }
@@ -148,10 +150,12 @@ namespace DBSearch
                 {
                     var tableName = column.TableName;
                     var matchCountSql = $@"
-                        select count(1) MatchCount
-				    from {LeftSymbol}{tableName}{RightSymbol} 
+                        select count(1) MatchCount 
+				    from {LeftSymbol}{tableName}{RightSymbol} {(IsSqlServer() ? "with (nolock)":"")} 
                         where {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p  ";
                     Command.CommandText = matchCountSql;
+
+                    Console.WriteLine(matchCountSql);
 
                     var matchCount = Convert.ToInt64(Command.ExecuteScalar());
                     if (matchCount > 0)
@@ -173,6 +177,11 @@ namespace DBSearch
                 }
                 return results;
             }
+        }
+
+        private bool IsSqlServer()
+        {
+            return this.DBConnectionType == DBConnectionType.SqlCeServer || this.DBConnectionType == DBConnectionType.SqlServer;
         }
 
         private void AddParameter(DbCommand command)

@@ -6,10 +6,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
     <Authors>ITWeiHan</Authors>
-    <Description>
-      Mini/Fast Mutiple DBMS Search All Table For One Value
-      More Details in Github Link : [DBSearch: Mini/Faster Object Property Value Getter. ](https://github.com/shps951023/DBSearch)
-    </Description>
+    <Description>More Details in Github Link : [DBSearch : Mini/Fast Multiple DBMS Search](https://github.com/shps951023/DBSearch)</Description>
     <Copyright>©2019 WeiHan Lin</Copyright>
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/shps951023/DBSearch</PackageProjectUrl>

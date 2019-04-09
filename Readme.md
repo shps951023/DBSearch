@@ -65,7 +65,7 @@ using (var connection = GetConnection())
 var data = connection.Search("Test",connectionCount : 10);
 ```
 
-【注意】假如連接字串使用帳號密碼方式,需要輸入connectionString參數,為何要如此麻煩可以看這篇[ConnectionString loses password](https://stackoverflow.com/questions/12467335/connectionstring-loses-password-after-connection-open).
+【注意】假如連接字串使用帳號`密碼`方式,並且`在執行Search前Open Connection`,需要輸入connectionString參數,為何要如此麻煩可以看這篇[ ConnectionString loses password when connection open](https://stackoverflow.com/questions/12467335/connectionstring-loses-password-after-connection-open)
 ```C#
 var data = connection.Search("Test",connectionCount : 10,connectionString : @"Data Source=192.168.1.1;User ID=sa;Password=123456;Initial Catalog=master;");
 ```
