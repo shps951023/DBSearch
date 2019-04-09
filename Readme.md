@@ -1,5 +1,8 @@
 > 【注意】目前版本處於Beta測試階段,請勿使用在商業環境。
 
+[![NuGet](https://img.shields.io/nuget/v/DBSearch.svg)](https://www.nuget.org/packages/DBSearch)
+![](https://img.shields.io/nuget/dt/DBSearch.svg)
+
 ---
 
 ### Features
@@ -41,17 +44,17 @@ using (var connection = GetConnection())
 
 舉例搜尋包含Test字串的欄位值
 ```C#
-using (var cnn = GetConnection())
+using (var connection = GetConnection())
 {
-    var data = cnn.Search("%Test%");
+    var data = connection.Search("%Test%");
 }
 ```
 
 在SqlServer當中也可以使用正則模糊查詢,舉例搜尋A或B字母開頭的欄位值
 ```C#
-using (var cnn = GetConnection())
+using (var connection = GetConnection())
 {
-    var data = cnn.Search("[A|B]%");
+    var data = connection.Search("[A|B]%");
 }
 ```
 
@@ -59,18 +62,18 @@ using (var cnn = GetConnection())
 
 舉例,建立十個連線來分工加快查詢工作
 ```C#
-var data = cnn.Search("Test",connnectionCount=10);
+var data = connection.Search("Test",connectionCount : 10);
 ```
 
 【注意】假如連接字串使用帳號密碼方式,需要輸入connectionString參數,為何要如此麻煩可以看這篇[ConnectionString loses password](https://stackoverflow.com/questions/12467335/connectionstring-loses-password-after-connection-open).
 ```C#
-var data = cnn.Search("Test",connnectionCount=10,connectionString=@"Data Source=192.168.1.1;User ID=sa;Password=123456;Initial Catalog=master;");
+var data = connection.Search("Test",connectionCount : 10,connectionString : @"Data Source=192.168.1.1;User ID=sa;Password=123456;Initial Catalog=master;");
 ```
 
 
 #### 進階應用
 
-修改全資料庫指定值,舉例將全資料庫"Hello Gitlab"值換成"Hello Github"
+修改全資料庫指定值,舉例將全資料庫"Hello Gitlab"值換成"Hello Github",記得做好備份、Log準備。  
 ```C#
 Replace("Hello Gitlab","Hello Github");
 
@@ -79,6 +82,7 @@ static void Replace(object replaceValue,object newValue)
     using (var scope = new System.Transactions.TransactionScope())
     using (var connection = GetConnection())
     {
+        //Log Action
         connection.Search(replaceValue, (result) =>
         {
             var sql = $"Update {result.TableName} set {result.ColumnName} = @newValue where {result.ColumnName} = @replaceValue";
