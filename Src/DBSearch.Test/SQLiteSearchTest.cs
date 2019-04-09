@@ -72,5 +72,15 @@ select * from [Table2]
                 Assert.True(data.Count() == 4);
             }
         }
+
+        [Fact]
+        public void MultipleConnectionQueryTest()
+        {
+            using (var connection = GetSQLiteConnection())
+            {
+                var data = connection.Search("Test", connectionCount: 10);
+                Assert.True(data.Count() == 4);
+            }
+        }
     }
 }
