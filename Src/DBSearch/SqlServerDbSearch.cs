@@ -38,12 +38,22 @@ namespace DBSearch
             {typeof(System.DateTimeOffset)," 'datetimeoffset' "},
         };
 
+        public override string GetMatchCountSql(ConnectionColumn column, string tableName)
+        {
+            return $@"select count(1) MatchCount 
+				  from [{tableName}] with (nolock)
+                      where [{column.ColumnName}] {ComparisonOperator} @p  ";
+        }
+
         public override IEnumerable<ConnectionColumn> GetConnectionColumns()
         {
             var type = SearchText.GetType();
 
             if (!_MapperDictionary.TryGetValue(type, out string conditionSql))
                 throw new NotSupportedException($"{type.FullName} not support");
+
+            if (SearchText is string && ComparisonOperator == "=") /*Equivalent queries do not require Text,NText*/
+                conditionSql = " 'varchar','char','nchar','nvarchar' ";
 
             var sql = $@"
                     select 
