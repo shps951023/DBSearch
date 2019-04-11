@@ -55,6 +55,7 @@ namespace DBSearch.Test
             using (var cnn = GetConnection())
             {
                 var result = cnn.Search(DateTime.Parse("2019/1/2 03:04:05"));
+                Assert.True(result.Count() == 2);
             }
         }
 
@@ -72,7 +73,9 @@ namespace DBSearch.Test
                 connection.Search(replaceValue, (result) =>
                 {
                     var sql = $"Update {result.TableName} set {result.ColumnName} = @newValue where {result.ColumnName} = @replaceValue";
-                    connection.Execute(sql, new { replaceValue, newValue }); //Using Dapper ORM
+                    var effectCount =connection.Execute(sql, new { replaceValue, newValue }); //Using Dapper ORM
+
+                    Assert.True(effectCount > 0);
                 });
                 scope.Complete();
             }
@@ -103,6 +106,7 @@ namespace DBSearch.Test
                         }
 
                         var effect = command.ExecuteNonQuery();
+                        Assert.True(effect > 0);
                     }              
                 });
             }

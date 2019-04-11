@@ -12,6 +12,11 @@ namespace DBSearch
     #region Open Api
     public static class DBSearch
     {
+        public static IEnumerable<DBSearchResult> Search(this DbConnection connection, string searchText, bool likeSearch, Action<DBSearchResult> action = null, int connectionCount = 1, string connectionString = null)
+        {
+            return Search(connection, searchText, action, likeSearch, connectionCount, connectionString);
+        }
+
         public static IEnumerable<DBSearchResult> Search(this DbConnection connection, string searchText, Action<DBSearchResult> action = null, int connectionCount = 1, string connectionString = null)
         {
             return Search(connection, searchText, action, true, connectionCount, connectionString);
@@ -84,15 +89,6 @@ namespace DBSearch
             ParameterSymbol = parameterSymbol;
         }
 
-        public virtual string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
-        {
-            var tableName = columnDatas.Key;
-            var checkConditionSql = string.Join("or", columnDatas.Select(
-                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
-            );
-            return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
-        }
-
         public virtual IEnumerable<DBSearchResult> Search()
         {
             if (this.ConnectionString == null)
@@ -149,13 +145,8 @@ namespace DBSearch
                 foreach (var column in columns)
                 {
                     var tableName = column.TableName;
-                    var matchCountSql = $@"
-                        select count(1) MatchCount 
-				    from {LeftSymbol}{tableName}{RightSymbol} {(IsSqlServer() ? "with (nolock)":"")} 
-                        where {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p  ";
+                    string matchCountSql = GetMatchCountSql(column, tableName);
                     Command.CommandText = matchCountSql;
-
-                    Console.WriteLine(matchCountSql);
 
                     var matchCount = Convert.ToInt64(Command.ExecuteScalar());
                     if (matchCount > 0)
@@ -177,6 +168,22 @@ namespace DBSearch
                 }
                 return results;
             }
+        }
+
+        public virtual string GetCheckSQL(IGrouping<string, ConnectionColumn> columnDatas)
+        {
+            var tableName = columnDatas.Key;
+            var checkConditionSql = string.Join("or", columnDatas.Select(
+                  (column) => $" {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p ").ToArray()
+            );
+            return $"select 1 from {LeftSymbol}{tableName}{RightSymbol}  where {checkConditionSql} ";
+        }
+
+        public virtual string GetMatchCountSql(ConnectionColumn column, string tableName)
+        {
+            return $@"select count(1) MatchCount 
+				    from {LeftSymbol}{tableName}{RightSymbol}  
+                        where {LeftSymbol}{column.ColumnName}{RightSymbol} {ComparisonOperator} {ParameterSymbol}p  ";
         }
 
         private bool IsSqlServer()

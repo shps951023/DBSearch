@@ -1,3 +1,5 @@
+### version 0.9.2
+- [X] Modify ComparisonOperator is Equivalent queries then string query default does not query Text,NText to avoid slowing search.
 
 ### version 0.9.1
 - [X] Fix SqlServer Query SQL By `with (nolock)` from issue (https://github.com/shps951023/DBSearch/issues/23)
