@@ -1,3 +1,6 @@
+### version 0.9.3
+- [X] Add NuGet ValueGetter and DbSqlHelper to improve efficiency
+
 ### version 0.9.2
 - [X] Modify ComparisonOperator is Equivalent queries then string query default does not query Text,NText to avoid slowing search.
 

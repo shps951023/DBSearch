@@ -6,6 +6,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using DbSqlHelper;
 
 namespace DBSearch
 {
@@ -30,7 +31,7 @@ namespace DBSearch
         private static IEnumerable<DBSearchResult> Search(DbConnection connection, object searchText, Action<DBSearchResult> action, bool likeSearch, int connectionCount, string connectionString)
         {
             DbBaseSearch db = null;
-            var connectionType = CheckDBConnectionTypeHelper.GetMatchDBType(connection);
+            var connectionType = connection.GetDbConnectionType();
             switch (connectionType)
             {
                 case DBConnectionType.SqlServer:
@@ -68,7 +69,7 @@ namespace DBSearch
         public DbConnection Connection { get; set; }
         public string ConnectionString { get; set; }
         public DbCommand Command { get; set; }
-        internal DBConnectionType DBConnectionType { get; set; }
+        public DBConnectionType DBConnectionType { get; set; }
 
         public object SearchText { get; set; }
         public string ComparisonOperator { get; set; }
@@ -248,113 +249,6 @@ namespace DBSearch
         public string ColumnName { get; set; }
         public string DataType { get; set; }
         public string IsNullable { get; set; }
-    }
-    #endregion
-
-    #region Extensions
-    internal static class CheckDBConnectionTypeHelper
-    {
-        private static readonly DBConnectionType DefaultAdapter = DBConnectionType.Unknown;
-        private static readonly Dictionary<string, DBConnectionType> AdapterDictionary
-               = new Dictionary<string, DBConnectionType>
-               {
-                   ["oracleconnection"] = DBConnectionType.Oracle,
-                   ["sqlconnection"] = DBConnectionType.SqlServer,
-                   ["sqlceconnection"] = DBConnectionType.SqlCeServer,
-                   ["npgsqlconnection"] = DBConnectionType.Postgres,
-                   ["sqliteconnection"] = DBConnectionType.SQLite,
-                   ["mysqlconnection"] = DBConnectionType.MySql,
-                   ["fbconnection"] = DBConnectionType.Firebird
-               };
-        public static DBConnectionType GetMatchDBType(IDbConnection connection)
-        {
-            var name = connection.GetType().Name.ToLower();
-            return !AdapterDictionary.ContainsKey(name) ? DefaultAdapter : AdapterDictionary[name];
-        }
-    }
-
-    internal enum DBConnectionType
-    {
-        SqlServer, SqlCeServer, Postgres, SQLite, MySql, Oracle, Firebird, Unknown
-    }
-
-    internal static partial class ValueGetter
-    {
-        /// <summary>
-        /// Compiler Method Like:
-        /// <code>
-        ///     string GetterToStringFunction(object i) => GetterFunction(i).ToString() ; 
-        ///     object GetterFunction(object i) => (i as MyClass).MyProperty1 as object ;
-        /// </code>
-        /// </summary>
-        public static Dictionary<string, string> GetToStringValues<T>(this T instance)
-             => instance?.GetType().GetPropertiesFromCache().ToDictionary(key => key.Name, value => value.GetToStringValue<T>(instance));
-
-        /// <summary>
-        /// Compiler Method Like:
-        /// <code>
-        ///     string GetterToStringFunction(object i) => GetterFunction(i).ToString() ; 
-        ///     object GetterFunction(object i) => (i as MyClass).MyProperty1 as object ;
-        /// </code>
-        /// </summary>
-        public static string GetToStringValue<T>(this PropertyInfo propertyInfo, T instance)
-             => instance != null ? ValueGetterCache<T, object>.GetOrAddFunctionCache(propertyInfo)(instance)?.ToString() : null;
-    }
-
-    internal static partial class ValueGetter
-    {
-        /// <summary>
-        /// Compiler Method Like:
-        /// <code>object GetterFunction(object i) => (i as MyClass).MyProperty1 as object ; </code>
-        /// </summary>
-        public static Dictionary<string, object> GetObjectValues<T>(this T instance)
-             => instance?.GetType().GetPropertiesFromCache().ToDictionary(key => key.Name, value => value.GetObjectValue(instance));
-
-        /// <summary>
-        /// Compiler Method Like:
-        /// <code>object GetterFunction(object i) => (i as MyClass).MyProperty1 as object ; </code>
-        /// </summary>
-        public static object GetObjectValue<T>(this PropertyInfo propertyInfo, T instance)
-             => instance != null ? ValueGetterCache<T, object>.GetOrAddFunctionCache(propertyInfo)(instance) : null;
-    }
-
-    internal partial class ValueGetterCache<TParam, TReturn>
-    {
-        private static readonly ConcurrentDictionary<int, Func<TParam, TReturn>> Functions = new ConcurrentDictionary<int, Func<TParam, TReturn>>();
-    }
-
-    internal partial class ValueGetterCache<TParam, TReturn>
-    {
-        internal static Func<TParam, TReturn> GetOrAddFunctionCache(PropertyInfo propertyInfo)
-        {
-            var key = propertyInfo.MetadataToken;
-            if (Functions.TryGetValue(key, out Func<TParam, TReturn> func))
-                return func;
-            return (Functions[key] = GetCastObjectFunction(propertyInfo));
-        }
-
-        private static Func<TParam, TReturn> GetCastObjectFunction(PropertyInfo prop)
-        {
-            var instance = Expression.Parameter(typeof(TReturn), "i");
-            var convert = Expression.TypeAs(instance, prop.DeclaringType);
-            var property = Expression.Property(convert, prop);
-            var cast = Expression.TypeAs(property, typeof(TReturn));
-            var lambda = Expression.Lambda<Func<TParam, TReturn>>(cast, instance);
-            return lambda.Compile();
-        }
-    }
-
-    internal static partial class PropertyCacheHelper
-    {
-        private static readonly Dictionary<RuntimeTypeHandle, IList<PropertyInfo>> TypePropertiesCache = new Dictionary<RuntimeTypeHandle, IList<PropertyInfo>>();
-
-        public static IList<PropertyInfo> GetPropertiesFromCache(this Type type)
-        {
-            if (TypePropertiesCache.TryGetValue(type.TypeHandle, out IList<PropertyInfo> pis))
-                return pis;
-            var xx = type.GetProperties().Where(w => !w.CanRead).ToList();
-            return TypePropertiesCache[type.TypeHandle] = type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(w => w.CanRead).ToList();
-        }
     }
     #endregion
 }
