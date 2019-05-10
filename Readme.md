@@ -7,6 +7,7 @@
 
 ### Online Demo
 - [DBSearch Sql Server Easy Search Demo  | .NET Fiddle](https://dotnetfiddle.net/9o1mNe)
+- [DBSearch Online Demo : Search Details | .NET Fiddle](https://dotnetfiddle.net/vgcj8s)
 
 ### Features
 - Mini、Easy(Just need to understand `Search` method)
