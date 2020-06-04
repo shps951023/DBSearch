@@ -100,12 +100,11 @@ namespace DBSearch
 
             using (Command = Connection.CreateCommand())
             {
-                AddParameter(Command);
-
                 var columns = new ConcurrentBag<ConnectionColumn>();
                 if (ConnectionCount == 1)
                 {
                     var list = GetConnectionColumns().GroupBy(g => g.TableName).ToList();
+                    AddParameter(Command);
                     list.ForEach(p =>
                     {
                         Command.CommandText = GetCheckSQL(p);
